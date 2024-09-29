@@ -35,7 +35,7 @@ static unsigned count_neighbors(char cells[NUM_CELLS][NUM_CELLS], unsigned x,
 static void high_life(char cells[NUM_CELLS][NUM_CELLS]) {
   for (unsigned x = 0u; x < NUM_CELLS; ++x) {
     for (unsigned y = 0u; y < NUM_CELLS; ++y) {
-      auto n_neighbors = count_neighbors(cells, x, y);
+      unsigned n_neighbors = count_neighbors(cells, x, y);
       if (cells[x][y] == kAlive) {
         if (n_neighbors != 2 && n_neighbors != 3)
           cells[x][y] = kDied;
