@@ -21,4 +21,3 @@ update-inputs:
     for i in $(fd --full-path flake.nix); do
       echo $(cd $(dirname $i) && nix flake update)
     done
-

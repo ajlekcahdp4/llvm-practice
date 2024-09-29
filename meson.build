@@ -6,8 +6,8 @@ project(
         'c_std=c2x',
         'cpp_std=c++23',
         'warning_level=3',
-        'werror=true',
+        #        'werror=true',
     ],
 )
-sdl2_dep = dependency('sdl2')
+subdir('highlife')
 
