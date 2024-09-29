@@ -5,9 +5,10 @@ stdenv.mkDerivation {
   version = "0.0.0";
   nativeBuildInputs = with pkgs; [
     meson
-    just
     ninja
+    pkg-config
+  ];
+  buildInputs = with pkgs; [
     SDL2
-    act
   ];
 }
