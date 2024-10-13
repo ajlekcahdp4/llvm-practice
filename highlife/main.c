@@ -1,8 +1,5 @@
 #include "draw-c.h"
 
-#include <assert.h>
-#include <stdlib.h>
-
 #define SCENE_SIZE 920
 #define CELL_SIZE 10
 #define NUM_CELLS (SCENE_SIZE / CELL_SIZE)
@@ -17,7 +14,6 @@ enum {
 
 static unsigned count_neighbors(char cells[NUM_CELLS][NUM_CELLS], unsigned x,
                                 unsigned y) {
-  assert(cells[x][y] != kBorn && cells[x][y] != kDied);
   unsigned cnt = 0;
   int min_x = x ? -1 : 0;
   int min_y = y ? -1 : 0;
@@ -42,8 +38,7 @@ static void high_life(char cells[NUM_CELLS][NUM_CELLS]) {
       } else if (cells[x][y] == kDead) {
         if (n_neighbors == 3 || n_neighbors == 6)
           cells[x][y] = kBorn;
-      } else
-        abort();
+      }
     }
   }
   for (unsigned x = 0u; x < NUM_CELLS; ++x) {
