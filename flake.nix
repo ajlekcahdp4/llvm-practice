@@ -23,17 +23,20 @@
       perSystem =
         { pkgs, ... }:
         let
-          llvmPackages = pkgs.llvmPackages_18;
+          llvmPkgs = pkgs.llvmPackages_18;
         in
         rec {
           imports = [ ./nix/treefmt.nix ];
 
           packages = rec {
-            llvm-practice = pkgs.callPackage ./. { stdenv = llvmPackages.stdenv; };
+            llvm-practice = pkgs.callPackage ./. {
+              stdenv = llvmPkgs.stdenv;
+              inherit llvmPkgs;
+            };
             default = llvm-practice;
           };
 
-          devShells.default = (pkgs.mkShell.override { stdenv = llvmPackages.stdenv; }) {
+          devShells.default = (pkgs.mkShell.override { stdenv = llvmPkgs.stdenv; }) {
             nativeBuildInputs =
               packages.llvm-practice.nativeBuildInputs
               ++ (with pkgs; [

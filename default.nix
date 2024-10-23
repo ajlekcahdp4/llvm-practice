@@ -1,4 +1,9 @@
-{ pkgs, stdenv, ... }:
+{
+  pkgs,
+  stdenv,
+  llvmPkgs,
+  ...
+}:
 stdenv.mkDerivation {
   src = ./.;
   pname = "llvm-practice";
@@ -10,5 +15,6 @@ stdenv.mkDerivation {
   ];
   buildInputs = with pkgs; [
     SDL2
+    llvmPkgs.llvm
   ];
 }
