@@ -1,3 +1,5 @@
+#include <draw-c.h>
+
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/ExecutionEngine/Interpreter.h>
@@ -1533,6 +1535,28 @@ auto main() -> int {
   phi_115->addIncoming(op_0_115, bb_19);
   auto *op_1_115 = instr_132;
   phi_115->addIncoming(op_1_115, bb_25);
-
   M.dump();
+  auto *ee = llvm::EngineBuilder(std::move(module_ptr)).create();
+
+  std::unordered_map<std::string, void *> external_functions;
+  external_functions.try_emplace("init_sdl",
+                                 reinterpret_cast<void *>(init_sdl));
+  external_functions.try_emplace("destroy_sdl",
+                                 reinterpret_cast<void *>(destroy_sdl));
+  external_functions.try_emplace("put_cell",
+                                 reinterpret_cast<void *>(put_cell));
+  external_functions.try_emplace("flush", reinterpret_cast<void *>(flush));
+
+  ee->InstallLazyFunctionCreator([&](const std::string &fnName) -> void * {
+    auto it = external_functions.find(fnName);
+    if (it == external_functions.end())
+      return nullptr;
+    return it->second;
+  });
+
+  ee->finalizeObject();
+  std::vector<llvm::GenericValue> noargs{};
+  ee->runFunction(func_7, noargs);
+
+  outs() << ee->getErrorMessage() << "\n";
 }
