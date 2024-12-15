@@ -30,22 +30,29 @@
 
           packages = rec {
             llvm-practice = pkgs.callPackage ./. {
-              stdenv = llvmPkgs.stdenv;
+              stdenv = pkgs.gcc14Stdenv;
               inherit llvmPkgs;
             };
             default = llvm-practice;
           };
 
-          devShells.default = (pkgs.mkShell.override { stdenv = llvmPkgs.stdenv; }) {
+          devShells.default = (pkgs.mkShell.override { stdenv = pkgs.gcc14Stdenv; }) {
             nativeBuildInputs =
               packages.llvm-practice.nativeBuildInputs
               ++ (with pkgs; [
                 act
                 valgrind
                 gdb
+                cmake
+                fmt
+                libffi
+                flex
+                bison
                 just
               ]);
-            buildInputs = packages.llvm-practice.buildInputs;
+            buildInputs = packages.llvm-practice.buildInputs ++ (with pkgs; [
+              boost
+            ]);
           };
         };
     };
