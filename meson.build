@@ -6,4 +6,5 @@ project(
 )
 subdir('highlife')
 subdir('ir-gen')
+subdir('paracl')
 
