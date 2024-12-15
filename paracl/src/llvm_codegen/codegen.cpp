@@ -56,6 +56,9 @@ public:
   }
 };
 
+
+
+
 namespace intrinsics {
 
 void print(int32_t val) {
@@ -84,16 +87,81 @@ auto get_print_function(Module &m) -> Function * {
 
 auto get_read_function(Module &m) -> Function * {
   auto &ctx = m.getContext();
-  return get_intrinsic_function("__read", m, Type::getInt32Ty(ctx));
+  return get_intrinsic_function("read", m, Type::getInt32Ty(ctx));
 }
 
-// auto get_print_function(Module &m) -> Function * {
-//   auto &ctx = m.getContext();
-//   return get_intrinsic_function("__print", m, Type::getVoidTy(ctx), {Type::getInt32Ty(ctx)});
-// }
+auto get_destroy_sdl_function(Module &m) { 
+  auto &ctx = m.getContext();
+  auto *int_type = Type::getInt32Ty(ctx);
+  return get_intrinsic_function("destroy_sdl", m, Type::getVoidTy(ctx));
+}
+auto get_put_cell_function(Module &m) {
+  auto &ctx = m.getContext();
+  auto *int_type = Type::getInt32Ty(ctx);
+  return get_intrinsic_function("put_cell", m, Type::getVoidTy(ctx), {int_type, int_type, int_type});
+}
+auto get_init_sdl_function(Module &m) {
+  auto &ctx = m.getContext();
+  auto *int_type = Type::getInt32Ty(ctx);
+  return get_intrinsic_function("init_sdl", m, Type::getVoidTy(ctx));
+}
 } // namespace intrinsics
 
 namespace ast = frontend::ast;
+
+void add_function_intrinsics(frontend::ast::ast_container &ast) {
+  auto *root_node = ast.get_root_ptr();
+  if (!root_node)
+    return;
+
+  auto &dummy_intrinsic_body = ast.make_node<frontend::ast::statement_block>();
+
+  using namespace std::string_literals;
+
+  auto &type_int = frontend::types::type_builtin::type_int;
+  auto &type_void = frontend::types::type_builtin::type_void;
+
+  auto &destroy_sdl = ast.make_node<frontend::ast::function_definition>(
+      std::optional{"destroy_sdl"s}, dummy_intrinsic_body, frontend::location(),
+      std::vector<frontend::ast::variable_expression>{}, type_void);
+
+  auto &flush = ast.make_node<frontend::ast::function_definition>(
+      std::optional{"flush"s}, dummy_intrinsic_body, frontend::location(),
+      std::vector<frontend::ast::variable_expression>{}, type_void);
+
+
+  auto x_argument = ast.make_node<frontend::ast::variable_expression>(
+      "__arg_x", type_int, frontend::location());
+  auto y_argument = ast.make_node<frontend::ast::variable_expression>(
+      "__arg_y", type_int, frontend::location());
+  auto color_argument = ast.make_node<frontend::ast::variable_expression>(
+      "__arg_color", type_int, frontend::location());
+  auto ticks_argument = ast.make_node<frontend::ast::variable_expression>(
+      "__arg_ticks", type_int, frontend::location());
+  auto &put_cell = ast.make_node<frontend::ast::function_definition>(
+      std::optional{"put_cell"s}, dummy_intrinsic_body,
+      frontend::location(),
+      std::vector<frontend::ast::variable_expression>{x_argument, y_argument,
+                                                      color_argument},
+      type_void);
+  x_argument = ast.make_node<frontend::ast::variable_expression>(
+      "__arg_w", type_int, frontend::location());
+  y_argument = ast.make_node<frontend::ast::variable_expression>(
+      "__arg_h", type_int, frontend::location());
+  auto size_argument = ast.make_node<frontend::ast::variable_expression>(
+      "__arg_size", type_int, frontend::location());
+
+  auto &init_sdl = ast.make_node<frontend::ast::function_definition>(
+      std::optional{"init_sdl"s}, dummy_intrinsic_body, frontend::location(),
+      std::vector<frontend::ast::variable_expression>{x_argument, y_argument, size_argument, ticks_argument}, type_void);
+
+  auto &statements = static_cast<frontend::ast::statement_block &>(*root_node);
+  statements.add_intrinsic(init_sdl);
+  statements.add_intrinsic(destroy_sdl);
+  statements.add_intrinsic(flush);
+  statements.add_intrinsic(put_cell);
+}
+
 class codegen_visitor final
     : public ezvis::visitor_base<const ast::i_ast_node, codegen_visitor, llvm::Value *> {
   std::unique_ptr<Module> m;
@@ -229,7 +297,21 @@ public:
 
   auto generate_function(const frontend::ast::function_definition &func) {
 
-    auto *function = this->funcs.at(&func);
+    Function * function = nullptr;
+    bool is_intrinsic = false;
+    if(func.name.value()=="init_sdl")
+      function = intrinsics::get_init_sdl_function(*m);
+    if(func.name.value()=="destroy_sdl")
+      function = intrinsics::get_init_sdl_function(*m);
+    if(func.name.value()=="put_cell")
+      function = intrinsics::get_init_sdl_function(*m);
+    if(func.name.value()=="flush")
+      function = intrinsics::get_init_sdl_function(*m);
+
+    if (function) return;
+    function = this->funcs.at(&func);
+
+
     current_function = function;
     auto *entry_block = BasicBlock::Create(get_ctx(), "entry", function);
     builder.SetInsertPoint(entry_block);

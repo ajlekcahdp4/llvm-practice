@@ -383,12 +383,12 @@ bool semantic_analyzer::analyze_main(ast::i_ast_node &ref) {
 bool semantic_analyzer::analyze_func(ast::function_definition &ref, bool is_recursive) {
   m_type_errors_allowed = is_recursive;
   m_scopes.begin_scope(ref.param_stab);
-  auto *body_ptr = try_get_value_block_ptr(ref.body());
+  auto *body_ptr = try_get_statement_block_ptr(ref.body());
   /* If not Error node */
   if (body_ptr) {
     auto &&body = *body_ptr;
     analyze_node(body);
-    ref.type.m_return_type = body.type;
+    ref.type.m_return_type = types::type_builtin::type_void;
   }
   if (is_recursive) analyze_func(ref, false);
   return m_error_queue->empty();

@@ -157,7 +157,7 @@ static paracl::frontend::parser::symbol_type yylex(paracl::frontend::scanner &p_
 %type <ast::return_statement *>
   return_statement
 
-%type <std::vector<ast::i_ast_node *>>
+%type <std::deque<ast::i_ast_node *>>
   statements_list
 
 %type <ast::statement_block *>
@@ -312,18 +312,18 @@ value_block:
 
 if_statement: 
   IF LPAREN expression RPAREN statement %prec THEN      { 
-    auto true_block = driver.make_ast_node<ast::statement_block>(std::vector{$5}, @5);
+    auto true_block = driver.make_ast_node<ast::statement_block>(std::deque{$5}, @5);
     $$ = driver.make_ast_node<ast::if_statement>(*$3, *true_block, @$);
   }
 | IF LPAREN expression RPAREN statement ELSE statement  { 
-    auto true_block = driver.make_ast_node<ast::statement_block>(std::vector{$5}, @5);
-    auto else_block = driver.make_ast_node<ast::statement_block>(std::vector{$7}, @7);
+    auto true_block = driver.make_ast_node<ast::statement_block>(std::deque{$5}, @5);
+    auto else_block = driver.make_ast_node<ast::statement_block>(std::deque{$7}, @7);
     $$ = driver.make_ast_node<ast::if_statement>(*$3, *true_block, *else_block, @$);
   }
 
 while_statement:  
   WHILE LPAREN expression RPAREN statement {
-    auto block = driver.make_ast_node<ast::statement_block>(std::vector{$5}, @5);
+    auto block = driver.make_ast_node<ast::statement_block>(std::deque{$5}, @5);
     $$ = driver.make_ast_node<ast::while_statement>(*$3, *block, @$);
   }
 

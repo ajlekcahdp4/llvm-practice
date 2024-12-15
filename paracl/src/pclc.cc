@@ -16,6 +16,8 @@
 
 #include "llvm_codegen/codegen.hpp"
 
+#include "draw-c.h"
+
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
@@ -95,6 +97,7 @@ int main(int argc, char *argv[]) try {
   drv.parse();
 
   const auto &parse_tree = drv.ast();
+  paracl::llvm_codegen::add_function_intrinsics(drv.ast());
   bool valid = drv.analyze();
 
   auto out_type = derive_output_type(output_type_str);
@@ -131,6 +134,18 @@ int main(int argc, char *argv[]) try {
     );
     external_functions.try_emplace(
         "__read", reinterpret_cast<void *>(paracl::llvm_codegen::intrinsics::read)
+    );
+    external_functions.try_emplace(
+        "init_sdl", reinterpret_cast<void *>(init_sdl)
+    );
+    external_functions.try_emplace(
+        "destroy_sdl", reinterpret_cast<void *>(destroy_sdl)
+    );
+    external_functions.try_emplace(
+        "put_cell", reinterpret_cast<void *>(put_cell)
+    );
+    external_functions.try_emplace(
+        "flush", reinterpret_cast<void *>(flush)
     );
 
     exec->InstallLazyFunctionCreator([&](const std::string &name) -> void * {
