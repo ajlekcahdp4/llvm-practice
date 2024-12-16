@@ -1,6 +1,18 @@
 # 01-paracc
 
 Interpreter implementation for ParaCL, a custom C-like language.
+## Build
+```sh
+meson setup ../build
+meson compile -C ../build
+```
+
+## Highlife on paracl
+To launch a graphical application "highlife" run:
+```sh
+../build/paracl/src/pclc paracl/highlife.pcl -t llvm
+```
+You can also pass flag `--emit-llvm` to see generated llvm ir
 
 ## 0. What is ParaCL
 

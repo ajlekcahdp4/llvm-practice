@@ -245,7 +245,6 @@ public:
           return builder.CreateAlloca(to_llvm_type(variable_def->type), 0,
                                       nullptr, variable_def->name());
       }();
-      value->dump();
       sym.add(name, {value, variable_def});
     }
   }
