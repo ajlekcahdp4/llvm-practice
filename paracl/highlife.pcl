@@ -19,9 +19,16 @@
   cells[(center+2)*rows +center] = alive;
   cells[(center+3)*rows +center] = alive;
   
-  init_sdl(scene_size, scene_size, cell_size, 500);
+  init_sdl(scene_size, scene_size, cell_size, 50);
   step = 0;
   while (step < 1000) {
+    cnt = 0;
+    min_x = 0;
+    min_y = 0;
+    max_x = 1;
+    max_y = 1;
+    i = 0;
+    j = 0;
     x = 0;
     while (x < num_cells) {
       y = 0;

@@ -197,8 +197,9 @@ void semantic_analyzer::analyze_node(ast::value_block &ref) {
   m_return_statements = old_returns;
 }
 
-void semantic_analyzer::analyze_node(ast::statement_block &ref) {
-  m_scopes.begin_scope(ref.stab);
+void semantic_analyzer::analyze_node(ast::statement_block &ref, bool scope) {
+  if(scope)
+    m_scopes.begin_scope(ref.stab);
   for (auto start = ref.begin(), finish = ref.end(); start != finish; ++start) {
     assert(*start && "Broken statement pointer in a block");
     auto &&stmt = **start;
@@ -249,9 +250,15 @@ void semantic_analyzer::analyze_node(ast::if_statement &ref) {
 }
 
 void semantic_analyzer::analyze_node(ast::while_statement &ref) {
+  m_scopes.begin_scope(ref.symbol_table);
   apply(*ref.cond());
   expect_type_eq(*ref.cond(), type_builtin::type_int);
-  apply(*ref.block());
+  auto *proxy_block = ref.block();
+  assert(proxy_block->size());
+  auto *block_node = proxy_block->back();
+  assert(block_node);
+  auto *block = static_cast<ast::statement_block *>(block_node);
+  analyze_node(*block, false);
 }
 
 void semantic_analyzer::analyze_node(ast::subscript &ref) {

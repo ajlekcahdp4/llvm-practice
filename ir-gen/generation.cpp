@@ -296,7 +296,7 @@ auto main() -> int {
   auto *op_3_61 = ConstantInt::get(Ctx, APInt(32, 920));
   auto *op_4_61 = ConstantInt::get(Ctx, APInt(32, 920));
   auto *op_5_61 = ConstantInt::get(Ctx, APInt(32, 10));
-  auto *op_6_61 = ConstantInt::get(Ctx, APInt(32, 2000));
+  auto *op_6_61 = ConstantInt::get(Ctx, APInt(32, 50));
   op_2_61.push_back(op_3_61);
   op_2_61.push_back(op_4_61);
   op_2_61.push_back(op_5_61);
