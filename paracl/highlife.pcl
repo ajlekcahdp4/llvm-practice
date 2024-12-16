@@ -1,0 +1,94 @@
+{
+  scene_size = 920;
+  cell_size = 10;
+  num_cells = scene_size / cell_size;
+  center = num_cells / 2;
+  
+  dead = 0;
+  alive = 1;
+  born = 2;
+  died = 3;
+
+  rows = 92;
+  int[8464] cells = 0;
+  cells[center * rows + center+1] = alive;
+  cells[center * rows + center+2] = alive;
+  cells[center * rows + center+3] = alive;
+
+  cells[(center+1) *rows + center] = alive;
+  cells[(center+2)*rows +center] = alive;
+  cells[(center+3)*rows +center] = alive;
+  
+  init_sdl(scene_size, scene_size, cell_size, 500);
+  step = 0;
+  while (step < 1000) {
+    x = 0;
+    while (x < num_cells) {
+      y = 0;
+      while (y < num_cells) {
+        if (cells[x *rows + y] == alive)
+          put_cell(x, y, 16777215);
+        else
+          put_cell(x, y, 0);
+        y = y + 1;  
+      }
+      x = x +1;
+    }
+    flush();
+    // highlife ================================
+    x = 0;
+    while (x < num_cells) {
+      y = 0;
+      while (y < num_cells) {
+        was_alive = 0;
+        // count neighbors  ====================
+        cnt = 0;
+        min_x = 0;
+        min_y = 0;
+        max_x = 1;
+        max_y = 1;
+        i = 0;
+        j = 0;
+        if (x) min_x = -1;
+        if (y) min_y = -1;
+        if (x == num_cells - 1) max_x = 0;
+        if (y == num_cells - 1) max_y = 0;
+        i = min_x;
+        while (i <= max_x) {
+          j = min_y;
+          while (j <= max_y) {
+            if (cells[(x + i) * rows + y + j] == alive || cells[(x+i)*rows + y + j] == died)
+              cnt = cnt + 1;
+            j = j + 1;
+          }
+          i = i + 1;
+        }
+        if (cells[x*rows + y] == alive)
+          cnt = cnt - 1;
+        // end count neighbors ==================
+        was_alive = cells[x*rows + y] == alive;
+        if (was_alive != 0 && (cnt != 2) && (cnt != 3))
+            cells[x *rows + y] = died;
+        if (was_alive == 0 && cells[x*rows + y] == dead && (cnt == 3 || cnt == 6))
+          cells[x*rows + y] = born;
+        y = y + 1;
+      }
+      x = x + 1;
+    }
+    x = 0;
+    while (x < num_cells) {
+      y = 0;
+      while (y < num_cells) {
+        if (cells[x*rows + y] == born)
+          cells[x*rows + y] = alive;
+        if (cells[x*rows + y] == died)
+            cells[x*rows + y] = dead;
+        y = y + 1;
+      }
+      x = x + 1;
+    }
+    // end highlife ===============================
+    step = step + 1;
+  }
+  destroy_sdl();
+}
