@@ -30,17 +30,20 @@ public:
   };
 
 private:
-  using map_type = utils::transparent::string_unordered_map<function_attributes>;
+  using map_type =
+      utils::transparent::string_unordered_map<function_attributes>;
   map_type m_table;
 
 public:
   std::optional<function_attributes> lookup(std::string_view name) const {
     auto found = m_table.find(name);
-    if (found == m_table.end()) return std::nullopt;
+    if (found == m_table.end())
+      return std::nullopt;
     return found->second;
   }
 
-  std::pair<function_attributes, bool> define_function(std::string_view name, function_attributes attributes) {
+  std::pair<function_attributes, bool>
+  define_function(std::string_view name, function_attributes attributes) {
     auto [iter, inserted] = m_table.emplace(name, attributes);
     return std::pair{iter->second, inserted};
   }
@@ -57,7 +60,8 @@ public:
   auto size() const { return m_table.size(); }
 };
 
-using usegraph_type = graphs::basic_directed_graph<std::string, ast::function_definition *, void>;
+using usegraph_type =
+    graphs::basic_directed_graph<std::string, ast::function_definition *, void>;
 
 struct functions_analytics final {
   function_table named_functions;

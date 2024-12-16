@@ -20,7 +20,8 @@ class print_statement : public i_statement {
   EZVIS_VISITABLE();
 
 public:
-  print_statement(i_expression &p_expr, location l) : i_statement{l}, m_expr{&p_expr} {}
+  print_statement(i_expression &p_expr, location l)
+      : i_statement{l}, m_expr{&p_expr} {}
   i_expression &expr() const { return *m_expr; }
 };
 

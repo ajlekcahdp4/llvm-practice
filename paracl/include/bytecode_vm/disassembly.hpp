@@ -26,7 +26,8 @@ namespace paracl::bytecode_vm::decl_vm::disassembly {
 
 class constant_pool_disassembler {
 public:
-  auto &operator()(auto &os, std::input_iterator auto start, std::input_iterator auto finish) const {
+  auto &operator()(auto &os, std::input_iterator auto start,
+                   std::input_iterator auto finish) const {
     os << ".constant_pool\n";
 
     for (constant_pool_type::size_type i = 0; start != finish; ++start, ++i) {
@@ -44,12 +45,14 @@ public:
   chunk_binary_disassembler(const t_instr_set &isa) : instruction_set{isa} {}
 
 public:
-  void operator()(auto &os, std::forward_iterator auto &first, std::forward_iterator auto last) const {
+  void operator()(auto &os, std::forward_iterator auto &first,
+                  std::forward_iterator auto last) const {
     if (first == last) {
       throw std::runtime_error{"Unexpectedly reached the end of range"};
     }
 
-    auto current_instruction = instruction_set.instruction_lookup_table[*first++];
+    auto current_instruction =
+        instruction_set.instruction_lookup_table[*first++];
     // clang-format off
     std::visit(::utils::visitors{
       [&](std::monostate) {
@@ -66,7 +69,8 @@ public:
     os << ".code\n";
 
     auto start = ch.binary_begin();
-    for (auto first = ch.binary_begin(), last = ch.binary_end(); first != last;) {
+    for (auto first = ch.binary_begin(), last = ch.binary_end();
+         first != last;) {
       utils::padded_hex_printer(os, std::distance(start, first)) << " ";
       operator()(os, first, last);
       os << "\n";
@@ -83,7 +87,8 @@ public:
   chunk_complete_disassembler(t_instr_set isa) : binary_disas{isa} {}
 
   auto &operator()(auto &os, const chunk &chk) const {
-    constant_pool_disassembler{}(os, chk.constants_begin(), chk.constants_end());
+    constant_pool_disassembler{}(os, chk.constants_begin(),
+                                 chk.constants_end());
     os << "\n";
     binary_disas(os, chk);
     return os;

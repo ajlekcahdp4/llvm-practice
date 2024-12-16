@@ -18,11 +18,13 @@ namespace utils {
 template <std::input_iterator input_it>
 input_it copy_while(
     input_it first, input_it last,
-    std::output_iterator<typename std::iterator_traits<input_it>::value_type> auto o_first,
-    std::invocable<typename std::iterator_traits<input_it>::value_type> auto pred
-) {
+    std::output_iterator<
+        typename std::iterator_traits<input_it>::value_type> auto o_first,
+    std::invocable<typename std::iterator_traits<input_it>::value_type> auto
+        pred) {
   for (; first != last; ++first) {
-    if (!pred(*first)) break;
+    if (!pred(*first))
+      break;
     *o_first = *first;
     ++o_first;
   }

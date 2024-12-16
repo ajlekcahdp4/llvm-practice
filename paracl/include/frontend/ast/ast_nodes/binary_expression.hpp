@@ -37,22 +37,36 @@ enum class binary_operation {
 constexpr std::string_view binary_operation_to_string(binary_operation op) {
   using bin_op = binary_operation;
   switch (op) {
-  case bin_op::E_BIN_OP_ADD: return "+";
-  case bin_op::E_BIN_OP_SUB: return "-";
-  case bin_op::E_BIN_OP_MUL: return "*";
-  case bin_op::E_BIN_OP_DIV: return "/";
-  case bin_op::E_BIN_OP_MOD: return "%";
-  case bin_op::E_BIN_OP_EQ: return "==";
-  case bin_op::E_BIN_OP_NE: return "!=";
-  case bin_op::E_BIN_OP_GT: return ">";
-  case bin_op::E_BIN_OP_LS: return "<";
-  case bin_op::E_BIN_OP_GE: return ">=";
-  case bin_op::E_BIN_OP_LE: return "<=";
-  case bin_op::E_BIN_OP_AND: return "&&";
-  case bin_op::E_BIN_OP_OR: return "||";
+  case bin_op::E_BIN_OP_ADD:
+    return "+";
+  case bin_op::E_BIN_OP_SUB:
+    return "-";
+  case bin_op::E_BIN_OP_MUL:
+    return "*";
+  case bin_op::E_BIN_OP_DIV:
+    return "/";
+  case bin_op::E_BIN_OP_MOD:
+    return "%";
+  case bin_op::E_BIN_OP_EQ:
+    return "==";
+  case bin_op::E_BIN_OP_NE:
+    return "!=";
+  case bin_op::E_BIN_OP_GT:
+    return ">";
+  case bin_op::E_BIN_OP_LS:
+    return "<";
+  case bin_op::E_BIN_OP_GE:
+    return ">=";
+  case bin_op::E_BIN_OP_LE:
+    return "<=";
+  case bin_op::E_BIN_OP_AND:
+    return "&&";
+  case bin_op::E_BIN_OP_OR:
+    return "||";
   }
 
-  assert(0); // We really shouldn't get here. If we do, then someone has broken the enum class intentionally.
+  assert(0); // We really shouldn't get here. If we do, then someone has broken
+             // the enum class intentionally.
   std::terminate();
 }
 
@@ -63,8 +77,10 @@ class binary_expression : public i_expression {
   EZVIS_VISITABLE();
 
 public:
-  binary_expression(binary_operation op_type, i_expression &left, i_expression &right, location l)
-      : i_expression{l}, m_operation_type{op_type}, m_left{&left}, m_right{&right} {}
+  binary_expression(binary_operation op_type, i_expression &left,
+                    i_expression &right, location l)
+      : i_expression{l}, m_operation_type{op_type}, m_left{&left},
+        m_right{&right} {}
 
   i_expression &left() const { return *m_left; }
   i_expression &right() const { return *m_right; }

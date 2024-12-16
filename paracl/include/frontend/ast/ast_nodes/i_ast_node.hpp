@@ -40,7 +40,8 @@ public:
       : i_ast_node{l}, type{p_type} {}
 
   std::string type_str() const {
-    if (!type) return "<undetermined>";
+    if (!type)
+      return "<undetermined>";
     return type.to_string();
   }
 };
@@ -72,12 +73,16 @@ class return_statement;
 
 class error_node;
 
-using tuple_expression_nodes = std::tuple<
-    assignment_statement, binary_expression, constant_expression, read_expression, value_block,
-    unary_expression, variable_expression, function_call, function_definition_to_ptr_conv>;
+using tuple_expression_nodes =
+    std::tuple<assignment_statement, binary_expression, constant_expression,
+               read_expression, value_block, unary_expression,
+               variable_expression, function_call,
+               function_definition_to_ptr_conv>;
 
-using tuple_all_nodes = utils::tuple_add_types_t<
-    tuple_expression_nodes, if_statement, print_statement, while_statement, error_node,
-    function_definition, return_statement, statement_block, subscript>;
+using tuple_all_nodes =
+    utils::tuple_add_types_t<tuple_expression_nodes, if_statement,
+                             print_statement, while_statement, error_node,
+                             function_definition, return_statement,
+                             statement_block, subscript>;
 
 } // namespace paracl::frontend::ast

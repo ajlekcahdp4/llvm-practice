@@ -36,7 +36,9 @@ struct error_report final {
 
 public:
   error_report(const error_kind &primary) : m_primary_error(primary) {}
-  void add_attachment(error_attachment attach) { m_attachments.push_back(std::move(attach)); }
+  void add_attachment(error_attachment attach) {
+    m_attachments.push_back(std::move(attach));
+  }
 };
 
 using error_queue_type = std::vector<error_report>;
@@ -79,8 +81,10 @@ private:
 
     fmt::println("{}: {}", loc_to_str(loc), msg);
     if (loc.begin.line == loc.end.line) {
-      fmt::println("{:<{}}{}", fmt::format("{} |", loc.begin.line), offset_width, m_source->getline(loc.begin.line));
-      fmt::println("{:<{}}{}", "", offset_width, make_squigly_line(loc.begin.column));
+      fmt::println("{:<{}}{}", fmt::format("{} |", loc.begin.line),
+                   offset_width, m_source->getline(loc.begin.line));
+      fmt::println("{:<{}}{}", "", offset_width,
+                   make_squigly_line(loc.begin.column));
       return;
     }
 
@@ -88,8 +92,10 @@ private:
     auto last_line = std::min(loc.end.line, loc.begin.line + c_max_lines);
 
     // Here we handle multiline errors
-    fmt::println("{:<{}}{}", fmt::format("{} |", loc.begin.line), offset_width, m_source->getline(loc.begin.line));
-    for (auto start = loc.begin.line + 1, finish = last_line; start <= finish; ++start) {
+    fmt::println("{:<{}}{}", fmt::format("{} |", loc.begin.line), offset_width,
+                 m_source->getline(loc.begin.line));
+    for (auto start = loc.begin.line + 1, finish = last_line; start <= finish;
+         ++start) {
       fmt::println("{:<{}}{}", "", offset_width, m_source->getline(start));
     }
   }
@@ -103,8 +109,10 @@ public:
     const std::string bison_syntax = "syntax error";
     if (err.m_error_message.starts_with(bison_syntax)) {
       auto &str =
-          err.m_error_message; // Hacky workaround to capitalize bison syntax error. Should rework later. TODO[Sergei]
-      str.replace(str.find(bison_syntax), bison_syntax.length(), "Syntax error");
+          err.m_error_message; // Hacky workaround to capitalize bison syntax
+                               // error. Should rework later. TODO[Sergei]
+      str.replace(str.find(bison_syntax), bison_syntax.length(),
+                  "Syntax error");
     }
 
     print_message_location(err.m_error_message, err.m_loc);

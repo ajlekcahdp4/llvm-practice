@@ -27,7 +27,8 @@ private:
 public:
   ast::function_definition *m_def;
 
-  function_call(std::string name, location l, std::vector<i_expression *> params = {})
+  function_call(std::string name, location l,
+                std::vector<i_expression *> params = {})
       : i_expression{l}, vector{std::move(params)}, m_name{std::move(name)} {}
 
   std::string_view name() const & { return m_name; }

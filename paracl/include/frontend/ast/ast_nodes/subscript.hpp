@@ -27,7 +27,8 @@ private:
 
 public:
   subscript(std::string name, i_expression *sub, location l)
-      : i_expression{l, types::type_builtin::type_int}, m_name{std::move(name)}, m_sub(sub) {}
+      : i_expression{l, types::type_builtin::type_int}, m_name{std::move(name)},
+        m_sub(sub) {}
 
   std::string_view name() const & { return m_name; }
 

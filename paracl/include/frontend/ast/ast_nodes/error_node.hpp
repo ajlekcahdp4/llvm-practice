@@ -24,7 +24,8 @@ private:
   EZVIS_VISITABLE();
 
 public:
-  error_node(std::string_view msg, location l) : i_expression{l}, m_error_message{msg} {};
+  error_node(std::string_view msg, location l)
+      : i_expression{l}, m_error_message{msg} {};
   std::string error_msg() const { return m_error_message; }
 };
 

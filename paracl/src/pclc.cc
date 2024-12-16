@@ -42,14 +42,19 @@ enum class output_type : unsigned {
   LLVM,
 };
 
-template <output_type T> static constexpr std::string_view output_type_name = "";
+template <output_type T>
+static constexpr std::string_view output_type_name = "";
 
-template <> constexpr std::string_view output_type_name<output_type::BYTECODE> = "bytecode";
-template <> constexpr std::string_view output_type_name<output_type::LLVM> = "llvm";
+template <>
+constexpr std::string_view output_type_name<output_type::BYTECODE> = "bytecode";
+template <>
+constexpr std::string_view output_type_name<output_type::LLVM> = "llvm";
 
 auto derive_output_type(std::string_view type) {
-  if (type == output_type_name<output_type::BYTECODE>) return output_type::BYTECODE;
-  if (type == output_type_name<output_type::LLVM>) return output_type::LLVM;
+  if (type == output_type_name<output_type::BYTECODE>)
+    return output_type::BYTECODE;
+  if (type == output_type_name<output_type::LLVM>)
+    return output_type::LLVM;
   throw std::invalid_argument(fmt::format("Unknown output type: \"{}\"", type));
 }
 
@@ -66,20 +71,28 @@ int main(int argc, char *argv[]) try {
 
   desc.add_options()("help", "Produce help message");
   desc.add_options()("emit-llvm", "Dump LLVM IR");
-  desc.add_options()("ast-dump,a", po::value(&ast_dump_option)->default_value(false), "Dump AST");
-  desc.add_options()("input-file", po::value(&input_file_name), "Input file name");
+  desc.add_options()("ast-dump,a",
+                     po::value(&ast_dump_option)->default_value(false),
+                     "Dump AST");
+  desc.add_options()("input-file", po::value(&input_file_name),
+                     "Input file name");
   desc.add_options()(
       "output-type,t",
-      po::value(&output_type_str)->default_value(output_type_name<output_type::BYTECODE>.data()),
-      "Output type"
-  );
+      po::value(&output_type_str)
+          ->default_value(output_type_name<output_type::BYTECODE>.data()),
+      "Output type");
 
-  desc.add_options()("output,o", po::value(&output_file_option), "Otput file for compiled program");
+  desc.add_options()("output,o", po::value(&output_file_option),
+                     "Otput file for compiled program");
   po::positional_options_description pos_desc;
   pos_desc.add("input-file", -1);
 
   auto vm = po::variables_map{};
-  po::store(po::command_line_parser(argc, argv).options(desc).positional(pos_desc).run(), vm);
+  po::store(po::command_line_parser(argc, argv)
+                .options(desc)
+                .positional(pos_desc)
+                .run(),
+            vm);
 
   if (vm.count("help")) {
     std::cout << desc << "\n";
@@ -119,38 +132,36 @@ int main(int argc, char *argv[]) try {
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::LLVMContext ctx;
     auto m = paracl::llvm_codegen::emit_llvm(drv, ctx);
-    if (vm.count("emit-llvm")) m->dump();
+    if (vm.count("emit-llvm"))
+      m->dump();
     auto &module_ref = *m;
     std::string err;
     auto *exec = llvm::EngineBuilder(std::move(m))
                      .setEngineKind(llvm::EngineKind::JIT)
                      .setErrorStr(&err)
                      .create();
-    if (!err.empty()) throw std::runtime_error(err);
+    if (!err.empty())
+      throw std::runtime_error(err);
     assert(exec);
     std::unordered_map<std::string, void *> external_functions;
     external_functions.try_emplace(
-        "__print", reinterpret_cast<void *>(paracl::llvm_codegen::intrinsics::print)
-    );
+        "__print",
+        reinterpret_cast<void *>(paracl::llvm_codegen::intrinsics::print));
     external_functions.try_emplace(
-        "__read", reinterpret_cast<void *>(paracl::llvm_codegen::intrinsics::read)
-    );
-    external_functions.try_emplace(
-        "init_sdl", reinterpret_cast<void *>(init_sdl)
-    );
-    external_functions.try_emplace(
-        "destroy_sdl", reinterpret_cast<void *>(destroy_sdl)
-    );
-    external_functions.try_emplace(
-        "put_cell", reinterpret_cast<void *>(put_cell)
-    );
-    external_functions.try_emplace(
-        "flush", reinterpret_cast<void *>(flush)
-    );
+        "__read",
+        reinterpret_cast<void *>(paracl::llvm_codegen::intrinsics::read));
+    external_functions.try_emplace("init_sdl",
+                                   reinterpret_cast<void *>(init_sdl));
+    external_functions.try_emplace("destroy_sdl",
+                                   reinterpret_cast<void *>(destroy_sdl));
+    external_functions.try_emplace("put_cell",
+                                   reinterpret_cast<void *>(put_cell));
+    external_functions.try_emplace("flush", reinterpret_cast<void *>(flush));
 
     exec->InstallLazyFunctionCreator([&](const std::string &name) -> void * {
       auto it = external_functions.find(name);
-      if (it == external_functions.end()) return nullptr;
+      if (it == external_functions.end())
+        return nullptr;
       return it->second;
     });
 
@@ -159,7 +170,8 @@ int main(int argc, char *argv[]) try {
     exec->runFunction(module_ref.getFunction("main"), {});
 
     auto &Err = exec->getErrorMessage();
-    if (!Err.empty()) throw std::runtime_error(Err);
+    if (!Err.empty())
+      throw std::runtime_error(Err);
     return EXIT_SUCCESS;
   }
   paracl::codegen::codegen_visitor generator;

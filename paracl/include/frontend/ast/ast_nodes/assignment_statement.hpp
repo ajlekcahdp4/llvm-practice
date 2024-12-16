@@ -28,15 +28,14 @@ private:
   EZVIS_VISITABLE();
 
 public:
-  assignment_statement(
-      std::variant<variable_expression, subscript> left, i_expression &right, location l
-  )
+  assignment_statement(std::variant<variable_expression, subscript> left,
+                       i_expression &right, location l)
       : i_expression{l}, m_right{&right} {
     m_lefts.push_back(left);
   }
 
-  // Note[Segei]: Assignment is right associative, so this function appends variables on the left,
-  // so location is extended to the left as well.
+  // Note[Segei]: Assignment is right associative, so this function appends
+  // variables on the left, so location is extended to the left as well.
   void append(variable_expression var) {
     m_lefts.emplace_back(var);
     m_loc.begin = var.loc().begin;

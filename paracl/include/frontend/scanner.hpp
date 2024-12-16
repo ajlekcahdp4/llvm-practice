@@ -17,7 +17,9 @@
 #endif
 
 #undef YY_DECL
-#define YY_DECL paracl::frontend::parser::symbol_type paracl::frontend::scanner::get_next_token()
+#define YY_DECL                                                                \
+  paracl::frontend::parser::symbol_type                                        \
+  paracl::frontend::scanner::get_next_token()
 
 #include "bison_paracl_parser.hpp"
 #include "location.hpp"
@@ -34,7 +36,8 @@ private:
   auto symbol_length() const { return yyleng; }
 
 public:
-  scanner(parser_driver &driver, std::string *filename = nullptr) : m_driver{driver}, m_pos{filename} {}
+  scanner(parser_driver &driver, std::string *filename = nullptr)
+      : m_driver{driver}, m_pos{filename} {}
   paracl::frontend::parser::symbol_type get_next_token();
 
   location update_loc() {

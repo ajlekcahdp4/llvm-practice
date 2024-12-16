@@ -20,16 +20,22 @@ namespace utils::transparent {
 
 struct string_equal {
   using is_transparent = void;
-  bool operator()(const convertible_to_string_view auto &lhs, const convertible_to_string_view auto &rhs) const {
-    return static_cast<std::string_view>(lhs) == static_cast<std::string_view>(rhs);
+  bool operator()(const convertible_to_string_view auto &lhs,
+                  const convertible_to_string_view auto &rhs) const {
+    return static_cast<std::string_view>(lhs) ==
+           static_cast<std::string_view>(rhs);
   }
 };
 
 struct string_hash {
   using is_transparent = string_equal;
-  bool operator()(const convertible_to_string_view auto &val) const { return std::hash<std::string_view>{}(val); }
+  bool operator()(const convertible_to_string_view auto &val) const {
+    return std::hash<std::string_view>{}(val);
+  }
 };
 
-template <typename T> using string_unordered_map = std::unordered_map<std::string, T, string_hash, string_equal>;
+template <typename T>
+using string_unordered_map =
+    std::unordered_map<std::string, T, string_hash, string_equal>;
 
 } // namespace utils::transparent

@@ -50,10 +50,12 @@
                 bison
                 just
               ]);
-            buildInputs = packages.llvm-practice.buildInputs ++ (with pkgs; [
-              boost
-              gtest
-            ]);
+            buildInputs =
+              packages.llvm-practice.buildInputs
+              ++ (with pkgs; [
+                boost
+                gtest
+              ]);
           };
         };
     };

@@ -50,18 +50,21 @@ public:
   chunk(binary_code_buffer_type p_bin, constant_pool_type p_const)
       : m_binary_code{std::move(p_bin)}, m_constant_pool{std::move(p_const)} {}
 
-  chunk(
-      std::input_iterator auto bin_begin, std::input_iterator auto bin_end, std::input_iterator auto const_begin,
-      std::input_iterator auto const_end
-  )
-      : m_binary_code{bin_begin, bin_end}, m_constant_pool{const_begin, const_end} {}
+  chunk(std::input_iterator auto bin_begin, std::input_iterator auto bin_end,
+        std::input_iterator auto const_begin,
+        std::input_iterator auto const_end)
+      : m_binary_code{bin_begin, bin_end},
+        m_constant_pool{const_begin, const_end} {}
 
   template <typename T> void push_value(T &&val) {
-    utils::write_little_endian(std::forward<T>(val), std::back_inserter(m_binary_code));
+    utils::write_little_endian(std::forward<T>(val),
+                               std::back_inserter(m_binary_code));
   };
 
   void push_back(value_type code) { m_binary_code.push_back(code); }
-  void set_constant_pool(constant_pool_type constants) { m_constant_pool = std::move(constants); }
+  void set_constant_pool(constant_pool_type constants) {
+    m_constant_pool = std::move(constants);
+  }
 
   auto binary_begin() const { return m_binary_code.cbegin(); }
   auto binary_end() const { return m_binary_code.cend(); }
@@ -81,9 +84,11 @@ void write_chunk(std::ostream &, const chunk &);
 template <typename, typename> struct instruction;
 
 using opcode_underlying_type = chunk::value_type;
-template <opcode_underlying_type ident, typename... Ts> struct instruction_desc {
+template <opcode_underlying_type ident, typename... Ts>
+struct instruction_desc {
   static constexpr auto opcode = ident;
-  static constexpr auto binary_size = sizeof(opcode_underlying_type) + (sizeof(Ts) + ... + 0);
+  static constexpr auto binary_size =
+      sizeof(opcode_underlying_type) + (sizeof(Ts) + ... + 0);
 
   const std::string_view name;
   using attribute_types = std::tuple<Ts...>;
@@ -93,23 +98,32 @@ template <opcode_underlying_type ident, typename... Ts> struct instruction_desc 
   static constexpr auto get_size() { return binary_size; }
 
   constexpr instruction_desc(const char *debug_name) : name{debug_name} {
-    if (!debug_name || name[0] == '\0') throw vm_error{"Empty debug names aren't allowed"};
+    if (!debug_name || name[0] == '\0')
+      throw vm_error{"Empty debug names aren't allowed"};
   }
 
-  constexpr auto operator>>(auto action) const { return instruction{*this, action}; }
+  constexpr auto operator>>(auto action) const {
+    return instruction{*this, action};
+  }
 
-  template <auto... I> static void pretty_print(auto &os, const attribute_types &tuple, std::index_sequence<I...>) {
+  template <auto... I>
+  static void pretty_print(auto &os, const attribute_types &tuple,
+                           std::index_sequence<I...>) {
     auto print_list_element = [&os, &tuple](auto i) {
-      os << (i == 0 ? "" : ", "), utils::padded_hex_printer(os, std::get<i>(tuple));
+      os << (i == 0 ? "" : ", "),
+          utils::padded_hex_printer(os, std::get<i>(tuple));
     };
     (print_list_element(std::integral_constant<std::size_t, I>()), ...);
   }
 
-  template <typename t_stream> t_stream &pretty_print(t_stream &os, const attribute_types &attr) const {
+  template <typename t_stream>
+  t_stream &pretty_print(t_stream &os, const attribute_types &attr) const {
     os << name;
     if constexpr (std::tuple_size_v<attribute_types> != 0) {
       os << " [ ";
-      pretty_print(os, attr, std::make_index_sequence<std::tuple_size_v<attribute_types>>());
+      pretty_print(
+          os, attr,
+          std::make_index_sequence<std::tuple_size_v<attribute_types>>());
       os << " ]";
     }
     return os;
@@ -125,12 +139,14 @@ public:
   t_action action = nullptr;
 
 public:
-  constexpr instruction(t_desc p_description, t_action p_action) : description{p_description}, action{p_action} {}
+  constexpr instruction(t_desc p_description, t_action p_action)
+      : description{p_description}, action{p_action} {}
   constexpr auto get_name() const { return description.get_name(); }
   constexpr auto get_opcode() const { return description.get_opcode(); }
   constexpr auto get_size() const { return description.get_size(); }
 
-  template <typename t_stream> t_stream &pretty_print(t_stream &os, const attribute_tuple_type &attr) const {
+  template <typename t_stream>
+  t_stream &pretty_print(t_stream &os, const attribute_tuple_type &attr) const {
     description.pretty_print(os, attr);
     return os;
   }
@@ -140,21 +156,29 @@ public:
     attribute_tuple_type attributes;
   };
 
-  template <auto I> static std::tuple_element_t<I, attribute_tuple_type> decode_attribute(auto &first, auto last) {
-    auto [val, iter] = ::utils::read_little_endian<std::tuple_element_t<I, attribute_tuple_type>>(first, last);
-    if (!val) throw vm_error{"Decoding error"};
+  template <auto I>
+  static std::tuple_element_t<I, attribute_tuple_type>
+  decode_attribute(auto &first, auto last) {
+    auto [val, iter] = ::utils::read_little_endian<
+        std::tuple_element_t<I, attribute_tuple_type>>(first, last);
+    if (!val)
+      throw vm_error{"Decoding error"};
     first = iter;
     return val.value();
   }
 
   template <auto... I>
   static attribute_tuple_type
-  decode_attributes(std::forward_iterator auto &first, [[maybe_unused]] std::forward_iterator auto last, std::index_sequence<I...>) {
+  decode_attributes(std::forward_iterator auto &first,
+                    [[maybe_unused]] std::forward_iterator auto last,
+                    std::index_sequence<I...>) {
     return std::make_tuple(decode_attribute<I>(first, last)...);
   }
 
-  decoded_instruction decode(std::forward_iterator auto &first, std::forward_iterator auto last) const {
-    auto seq = std::make_index_sequence<std::tuple_size_v<attribute_tuple_type>>{};
+  decoded_instruction decode(std::forward_iterator auto &first,
+                             std::forward_iterator auto last) const {
+    auto seq =
+        std::make_index_sequence<std::tuple_size_v<attribute_tuple_type>>{};
     auto attributes = decode_attributes(first, last, seq);
     return decoded_instruction{this, attributes};
   }
@@ -186,7 +210,9 @@ public:
     m_ip_end = m_program_code.binary_end();
   }
 
-  unsigned ip() const { return std::distance(m_program_code.binary_begin(), m_ip); }
+  unsigned ip() const {
+    return std::distance(m_program_code.binary_begin(), m_ip);
+  }
   unsigned sp() const { return m_sp; }
 
   void set_sp(unsigned new_sp) { m_sp = new_sp; }
@@ -198,7 +224,8 @@ public:
   execution_value_type r0() const { return m_r0; }
 
   auto &at_stack(unsigned index) & {
-    if (index >= m_execution_stack.size()) throw std::out_of_range{"Out of range index in at_stack"};
+    if (index >= m_execution_stack.size())
+      throw std::out_of_range{"Out of range index in at_stack"};
     return m_execution_stack.at(index);
   }
 
@@ -208,7 +235,8 @@ public:
   }
 
   auto pop() {
-    if (m_execution_stack.size() == 0) throw vm_error{"Bad stack pop"};
+    if (m_execution_stack.size() == 0)
+      throw vm_error{"Bad stack pop"};
     auto top = m_execution_stack.back();
     m_execution_stack.pop_back();
     return top;
@@ -221,14 +249,18 @@ public:
 };
 
 template <typename... t_instructions> struct instruction_set_description {
-  using instruction_variant_type = std::variant<std::monostate, const t_instructions *...>;
+  using instruction_variant_type =
+      std::variant<std::monostate, const t_instructions *...>;
   using instruction_tuple_type = std::tuple<t_instructions...>;
 
-  static constexpr auto max_table_size = std::numeric_limits<opcode_underlying_type>::max() + 1;
+  static constexpr auto max_table_size =
+      std::numeric_limits<opcode_underlying_type>::max() + 1;
   std::array<instruction_variant_type, max_table_size> instruction_lookup_table;
 
-  constexpr instruction_set_description(const t_instructions &...instructions) : instruction_lookup_table{} {
-    ((instruction_lookup_table[instructions.get_opcode()] = instruction_variant_type{std::addressof(instructions)}),
+  constexpr instruction_set_description(const t_instructions &...instructions)
+      : instruction_lookup_table{} {
+    ((instruction_lookup_table[instructions.get_opcode()] =
+          instruction_variant_type{std::addressof(instructions)}),
      ...);
   }
 };
@@ -238,7 +270,8 @@ template <typename t_desc> class virtual_machine {
   context<t_desc> m_execution_context;
 
 public:
-  constexpr virtual_machine(t_desc desc) : instruction_set{desc}, m_execution_context{} {}
+  constexpr virtual_machine(t_desc desc)
+      : instruction_set{desc}, m_execution_context{} {}
 
   void set_program_code(chunk ch) { m_execution_context = std::move(ch); }
   bool is_halted() const { return m_execution_context.is_halted(); }
@@ -246,8 +279,10 @@ public:
   void execute_instruction() {
     auto &ctx = m_execution_context;
 
-    if (ctx.is_halted()) throw vm_error{"Can't execute, VM is halted"};
-    auto current_instruction = instruction_set.instruction_lookup_table[*(m_execution_context.m_ip++)];
+    if (ctx.is_halted())
+      throw vm_error{"Can't execute, VM is halted"};
+    auto current_instruction =
+        instruction_set.instruction_lookup_table[*(m_execution_context.m_ip++)];
 
     // clang-format off
     std::visit(::utils::visitors{

@@ -32,9 +32,9 @@ namespace utils {
 namespace detail {
 
 inline auto get_iterator_endian(std::span<char> raw_bytes) {
-  static_assert(
-      std::endian::native == std::endian::little || std::endian::native == std::endian::big, "Mixed endian, bailing out"
-  );
+  static_assert(std::endian::native == std::endian::little ||
+                    std::endian::native == std::endian::big,
+                "Mixed endian, bailing out");
   if constexpr (std::endian::native == std::endian::little) {
     return raw_bytes.begin();
   } else {
@@ -48,23 +48,30 @@ template <integral_or_floating T, std::input_iterator iter>
 std::pair<std::optional<T>, iter> read_little_endian(iter first, iter last) {
   std::array<char, sizeof(T)> raw_bytes;
 
-  const std::input_iterator auto input_iter = detail::get_iterator_endian(raw_bytes);
+  const std::input_iterator auto input_iter =
+      detail::get_iterator_endian(raw_bytes);
   auto size = sizeof(T);
-  first = copy_while(first, last, input_iter, [&size](auto) { return size && size--; });
+  first = copy_while(first, last, input_iter,
+                     [&size](auto) { return size && size--; });
 
-  if (size != 0) return std::pair{std::nullopt, first};
+  if (size != 0)
+    return std::pair{std::nullopt, first};
   return std::pair{std::bit_cast<T>(raw_bytes), first};
 }
 
-template <integral_or_floating T> void write_little_endian(T val, std::output_iterator<char> auto oput) {
-  std::array<char, sizeof(T)> raw_bytes = std::bit_cast<decltype(raw_bytes)>(val);
-  const std::input_iterator auto input_iter = detail::get_iterator_endian(raw_bytes);
+template <integral_or_floating T>
+void write_little_endian(T val, std::output_iterator<char> auto oput) {
+  std::array<char, sizeof(T)> raw_bytes =
+      std::bit_cast<decltype(raw_bytes)>(val);
+  const std::input_iterator auto input_iter =
+      detail::get_iterator_endian(raw_bytes);
   auto size = sizeof(T);
   std::copy_n(input_iter, size, oput);
 }
 
 struct padded_hex {
-  auto &operator()(auto &os, std::integral auto val, std::size_t padding = 8) const {
+  auto &operator()(auto &os, std::integral auto val,
+                   std::size_t padding = 8) const {
     const auto format_string = fmt::format("{{:#0{}x}}", padding + 2);
     return os << fmt::vformat(format_string, fmt::make_format_args(val));
   }
@@ -72,12 +79,14 @@ struct padded_hex {
 
 constexpr padded_hex padded_hex_printer;
 
-void try_open_file(is_fstream auto &file, const std::filesystem::path &path, std::ios_base::openmode mode) {
+void try_open_file(is_fstream auto &file, const std::filesystem::path &path,
+                   std::ios_base::openmode mode) {
   file.exceptions(file.exceptions() | std::ios::badbit | std::ios::failbit);
   try {
     file.open(path, mode);
   } catch (std::exception &e) {
-    throw std::runtime_error{fmt::format("Could not open file `{}`: ", path.string(), e.what())};
+    throw std::runtime_error{
+        fmt::format("Could not open file `{}`: ", path.string(), e.what())};
   }
 }
 

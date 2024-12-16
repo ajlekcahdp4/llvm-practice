@@ -44,14 +44,16 @@ public:
   bool declared(std::string_view name) const { return m_table.count(name); }
   std::optional<attributes> get_attributes(std::string_view name) const {
     auto found = m_table.find(name);
-    if (found == m_table.end()) return std::nullopt;
+    if (found == m_table.end())
+      return std::nullopt;
     return found->second;
   }
 
   // Deprecated, prefer attributes func
   std::optional<unsigned> location(std::string_view name) const {
     auto found = m_table.find(name);
-    if (found == m_table.end()) return std::nullopt;
+    if (found == m_table.end())
+      return std::nullopt;
     return found->second.m_loc;
   }
 
@@ -69,32 +71,35 @@ public:
   vector::size_type size() const {
     return std::accumulate(
         vector::cbegin(), vector::cend(), std::size_t{0},
-        [](auto a, auto &&stab) { return a + stab->size(); }
-    );
+        [](auto a, auto &&stab) { return a + stab->size(); });
   }
 
   vector::size_type blocks() const { return vector::size(); }
 
   unsigned lookup_scope(std::string_view name) const {
-    auto found = std::find_if(vector::crbegin(), vector::crend(), [&name](auto &stab) {
-      return stab->declared(name);
-    });
+    auto found =
+        std::find_if(vector::crbegin(), vector::crend(),
+                     [&name](auto &stab) { return stab->declared(name); });
     if (found == vector::crend()) {
-      throw std::logic_error{"Trying to look up scope of a variable not present in symbol table"};
+      throw std::logic_error{
+          "Trying to look up scope of a variable not present in symbol table"};
     }
     return std::distance(vector::crbegin(), found);
   }
 
   std::optional<symtab::attributes> lookup_symbol(std::string_view name) const {
-    auto found = std::find_if(vector::crbegin(), vector::crend(), [&name](auto &stab) {
-      return stab->declared(name);
-    });
-    if (found == vector::crend()) return std::nullopt;
+    auto found =
+        std::find_if(vector::crbegin(), vector::crend(),
+                     [&name](auto &stab) { return stab->declared(name); });
+    if (found == vector::crend())
+      return std::nullopt;
     assert(*found && "Symbol table stack broken");
     return (*found)->get_attributes(name);
   }
 
-  bool declared(std::string_view name) const { return (lookup_symbol(name) ? true : false); }
+  bool declared(std::string_view name) const {
+    return (lookup_symbol(name) ? true : false);
+  }
   void declare(std::string_view name, ast::variable_expression *def) {
     vector::back()->declare(name, def);
   }

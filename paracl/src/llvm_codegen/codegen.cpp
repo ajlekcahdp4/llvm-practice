@@ -28,11 +28,14 @@ public:
 
   auto lookup(std::string_view name) const -> std::optional<symbol> {
     auto found = unordered_map::find(std::string(name));
-    if (found == unordered_map::end()) return std::nullopt;
+    if (found == unordered_map::end())
+      return std::nullopt;
     return found->second;
   }
 
-  void add(std::string_view name, symbol s) { unordered_map::try_emplace(std::string(name), s); }
+  void add(std::string_view name, symbol s) {
+    unordered_map::try_emplace(std::string(name), s);
+  }
 };
 
 class symtab final : private std::vector<symtab_scope> {
@@ -45,44 +48,45 @@ public:
   void begin_scope() { vector::emplace_back(); }
   void end_scope() { vector::emplace_back(); }
 
-  void add(std::string_view name, symbol value) { vector::back().add(name, value); }
+  void add(std::string_view name, symbol value) {
+    vector::back().add(name, value);
+  }
 
   auto lookup(std::string_view name) -> std::optional<symbol> {
     auto found = ranges::find_if(*this, [name](auto &scope) -> bool {
       return scope.lookup(name).has_value();
     });
-    if (found == end()) return std::nullopt;
+    if (found == end())
+      return std::nullopt;
     return found->lookup(name).value();
   }
 };
 
-
-
-
 namespace intrinsics {
 
-void print(int32_t val) {
-  fmt::println("{}", val);
-}
+void print(int32_t val) { fmt::println("{}", val); }
 
 int32_t read() {
   int32_t v;
   std::cin >> v;
-  if (!std::cin.good()) throw std::runtime_error("Invalid read");
+  if (!std::cin.good())
+    throw std::runtime_error("Invalid read");
   return v;
 }
 
 namespace {
-auto get_intrinsic_function(std::string_view name, Module &m, Type *ret, ArrayRef<Type *> args = {})
-    -> Function * {
-  if (auto *ptr = m.getFunction(name)) return ptr;
+auto get_intrinsic_function(std::string_view name, Module &m, Type *ret,
+                            ArrayRef<Type *> args = {}) -> Function * {
+  if (auto *ptr = m.getFunction(name))
+    return ptr;
   auto *func_type = FunctionType::get(ret, args, false);
   return Function::Create(func_type, Function::ExternalLinkage, name, &m);
 }
 } // namespace
 auto get_print_function(Module &m) -> Function * {
   auto &ctx = m.getContext();
-  return get_intrinsic_function("__print", m, Type::getVoidTy(ctx), {Type::getInt32Ty(ctx)});
+  return get_intrinsic_function("__print", m, Type::getVoidTy(ctx),
+                                {Type::getInt32Ty(ctx)});
 }
 
 auto get_read_function(Module &m) -> Function * {
@@ -90,7 +94,7 @@ auto get_read_function(Module &m) -> Function * {
   return get_intrinsic_function("read", m, Type::getInt32Ty(ctx));
 }
 
-auto get_destroy_sdl_function(Module &m) { 
+auto get_destroy_sdl_function(Module &m) {
   auto &ctx = m.getContext();
   auto *int_type = Type::getInt32Ty(ctx);
   return get_intrinsic_function("destroy_sdl", m, Type::getVoidTy(ctx));
@@ -98,7 +102,8 @@ auto get_destroy_sdl_function(Module &m) {
 auto get_put_cell_function(Module &m) {
   auto &ctx = m.getContext();
   auto *int_type = Type::getInt32Ty(ctx);
-  return get_intrinsic_function("put_cell", m, Type::getVoidTy(ctx), {int_type, int_type, int_type});
+  return get_intrinsic_function("put_cell", m, Type::getVoidTy(ctx),
+                                {int_type, int_type, int_type});
 }
 auto get_init_sdl_function(Module &m) {
   auto &ctx = m.getContext();
@@ -129,7 +134,6 @@ void add_function_intrinsics(frontend::ast::ast_container &ast) {
       std::optional{"flush"s}, dummy_intrinsic_body, frontend::location(),
       std::vector<frontend::ast::variable_expression>{}, type_void);
 
-
   auto x_argument = ast.make_node<frontend::ast::variable_expression>(
       "__arg_x", type_int, frontend::location());
   auto y_argument = ast.make_node<frontend::ast::variable_expression>(
@@ -139,8 +143,7 @@ void add_function_intrinsics(frontend::ast::ast_container &ast) {
   auto ticks_argument = ast.make_node<frontend::ast::variable_expression>(
       "__arg_ticks", type_int, frontend::location());
   auto &put_cell = ast.make_node<frontend::ast::function_definition>(
-      std::optional{"put_cell"s}, dummy_intrinsic_body,
-      frontend::location(),
+      std::optional{"put_cell"s}, dummy_intrinsic_body, frontend::location(),
       std::vector<frontend::ast::variable_expression>{x_argument, y_argument,
                                                       color_argument},
       type_void);
@@ -153,7 +156,9 @@ void add_function_intrinsics(frontend::ast::ast_container &ast) {
 
   auto &init_sdl = ast.make_node<frontend::ast::function_definition>(
       std::optional{"init_sdl"s}, dummy_intrinsic_body, frontend::location(),
-      std::vector<frontend::ast::variable_expression>{x_argument, y_argument, size_argument, ticks_argument}, type_void);
+      std::vector<frontend::ast::variable_expression>{
+          x_argument, y_argument, size_argument, ticks_argument},
+      type_void);
 
   auto &statements = static_cast<frontend::ast::statement_block &>(*root_node);
   statements.add_intrinsic(init_sdl);
@@ -163,29 +168,33 @@ void add_function_intrinsics(frontend::ast::ast_container &ast) {
 }
 
 class codegen_visitor final
-    : public ezvis::visitor_base<const ast::i_ast_node, codegen_visitor, llvm::Value *> {
+    : public ezvis::visitor_base<const ast::i_ast_node, codegen_visitor,
+                                 llvm::Value *> {
   std::unique_ptr<Module> m;
   IRBuilder<> builder;
-  std::unordered_map<const frontend::ast::function_definition *, Function *> funcs;
+  std::unordered_map<const frontend::ast::function_definition *, Function *>
+      funcs;
   const frontend::functions_analytics &fun_analysis;
   symtab sym;
   Function *current_function = nullptr;
   Function *entry = nullptr;
 
 public:
-  using to_visit = std::tuple<
-      ast::assignment_statement, ast::binary_expression, ast::constant_expression,
-      ast::print_statement, ast::read_expression, ast::statement_block, ast::unary_expression,
-      ast::variable_expression, ast::return_statement, ast::function_call, ast::if_statement,
-      ast::while_statement, ast::function_definition_to_ptr_conv, ast::subscript>;
+  using to_visit =
+      std::tuple<ast::assignment_statement, ast::binary_expression,
+                 ast::constant_expression, ast::print_statement,
+                 ast::read_expression, ast::statement_block,
+                 ast::unary_expression, ast::variable_expression,
+                 ast::return_statement, ast::function_call, ast::if_statement,
+                 ast::while_statement, ast::function_definition_to_ptr_conv,
+                 ast::subscript>;
 
   EZVIS_VISIT_CT(to_visit)
 
-  codegen_visitor(
-      std::string_view module_name, LLVMContext &ctx, const frontend::frontend_driver &drv
-  )
-      : m(std::make_unique<Module>(module_name, ctx)), builder(ctx), fun_analysis(drv.functions()) {
-  }
+  codegen_visitor(std::string_view module_name, LLVMContext &ctx,
+                  const frontend::frontend_driver &drv)
+      : m(std::make_unique<Module>(module_name, ctx)), builder(ctx),
+        fun_analysis(drv.functions()) {}
 
   Value *generate(const ast::binary_expression &);
   Value *generate(const ast::unary_expression &);
@@ -219,22 +228,22 @@ public:
       auto *value = [&] {
         auto &ref = *variable_def;
         auto &type = ref.type.base();
-        if (variable_def->type && type.get_class() == frontend::types::type_class::E_ARRAY) {
-          auto &array_type =
-              static_cast<const frontend::types::type_array &>(variable_def->type.base());
+        if (variable_def->type &&
+            type.get_class() == frontend::types::type_class::E_ARRAY) {
+          auto &array_type = static_cast<const frontend::types::type_array &>(
+              variable_def->type.base());
           auto *arr = builder.CreateAlloca(
               to_llvm_type(array_type.element_type.base()),
-              Constant::getIntegerValue(Type::getInt32Ty(get_ctx()), APInt(32, array_type.size))
-          );
-          builder.CreateMemSet(
-              arr, Constant::getIntegerValue(Type::getInt8Ty(get_ctx()), APInt(8, 0)),
-              array_type.size * 4, MaybeAlign()
-          );
+              Constant::getIntegerValue(Type::getInt32Ty(get_ctx()),
+                                        APInt(32, array_type.size)));
+          builder.CreateMemSet(arr,
+                               Constant::getIntegerValue(
+                                   Type::getInt8Ty(get_ctx()), APInt(8, 0)),
+                               array_type.size * 4, MaybeAlign());
           return arr;
         } else
-          return builder.CreateAlloca(
-              to_llvm_type(variable_def->type), 0, nullptr, variable_def->name()
-          );
+          return builder.CreateAlloca(to_llvm_type(variable_def->type), 0,
+                                      nullptr, variable_def->name());
       }();
       value->dump();
       sym.add(name, {value, variable_def});
@@ -248,49 +257,54 @@ public:
             [this](const type_composite_function &func) {
               auto *return_type = to_llvm_type(func.return_type());
               auto args_types = std::views::all(func) |
-                  ranges::views::transform([this](auto &type) { return to_llvm_type(type); }) |
-                  ranges::to<std::vector>();
+                                ranges::views::transform([this](auto &type) {
+                                  return to_llvm_type(type);
+                                }) |
+                                ranges::to<std::vector>();
               return FunctionType::get(return_type, args_types, false);
             },
-            [this](const type_array &arr) { throw std::runtime_error("Array type encountered"); },
+            [this](const type_array &arr) {
+              throw std::runtime_error("Array type encountered");
+            },
             [this](const type_builtin &type) -> Type * {
               switch (type.get_builtin_type_class()) {
               case frontend::types::builtin_type_class::E_BUILTIN_INT:
                 return Type::getInt32Ty(get_ctx());
               case frontend::types::builtin_type_class::E_BUILTIN_VOID:
                 return Type::getVoidTy(get_ctx());
-              default: throw std::invalid_argument("Unknown type encountered");
+              default:
+                throw std::invalid_argument("Unknown type encountered");
               }
-            }
-        },
-        type
-    );
+            }},
+        type);
   }
 
   void declare_functions(const frontend::functions_analytics &functions) {
     for (auto &&[key, attr] : functions.usegraph) {
       auto &&[name, func] = attr.value;
       auto *func_type = to_llvm_type(func->type);
-      auto *llvm_func = Function::Create(
-          static_cast<FunctionType *>(func_type), Function::ExternalLinkage, 0, func->name.value(),
-          m.get()
-      );
+      auto *llvm_func = Function::Create(static_cast<FunctionType *>(func_type),
+                                         Function::ExternalLinkage, 0,
+                                         func->name.value(), m.get());
       funcs.try_emplace(func, llvm_func);
     }
     auto *entry_type = FunctionType::get(Type::getVoidTy(get_ctx()), false);
-    entry = Function::Create(entry_type, Function::ExternalLinkage, 0, "main", m.get());
+    entry = Function::Create(entry_type, Function::ExternalLinkage, 0, "main",
+                             m.get());
   }
 
   void declare_globals(const frontend::ast::ast_container &ast) {
     auto *stab = fun_analysis.global_stab;
     assert(sym.empty());
     sym.begin_scope();
-    if (!stab) return;
+    if (!stab)
+      return;
     for (auto &&[name, attrs] : *fun_analysis.global_stab) {
       auto *def = attrs.m_definition;
       assert(def);
       auto *type = to_llvm_type(def->type);
-      auto *global = static_cast<GlobalVariable *>(m->getOrInsertGlobal(name, type));
+      auto *global =
+          static_cast<GlobalVariable *>(m->getOrInsertGlobal(name, type));
       global->setInitializer(Constant::getNullValue(type));
       sym.add(name, {global, nullptr});
     }
@@ -298,41 +312,42 @@ public:
 
   auto generate_function(const frontend::ast::function_definition &func) {
 
-    Function * function = nullptr;
+    Function *function = nullptr;
     bool is_intrinsic = false;
-    if(func.name.value()=="init_sdl")
+    if (func.name.value() == "init_sdl")
       function = intrinsics::get_init_sdl_function(*m);
-    if(func.name.value()=="destroy_sdl")
+    if (func.name.value() == "destroy_sdl")
       function = intrinsics::get_init_sdl_function(*m);
-    if(func.name.value()=="put_cell")
+    if (func.name.value() == "put_cell")
       function = intrinsics::get_init_sdl_function(*m);
-    if(func.name.value()=="flush")
+    if (func.name.value() == "flush")
       function = intrinsics::get_init_sdl_function(*m);
 
-    if (function) return;
+    if (function)
+      return;
     function = this->funcs.at(&func);
-
 
     current_function = function;
     auto *entry_block = BasicBlock::Create(get_ctx(), "entry", function);
     builder.SetInsertPoint(entry_block);
     begin_scope(func.param_stab);
 
-    for (auto &&[arg_value, variable_expr] : llvm::zip(function->args(), func)) {
-      builder.CreateStore(&arg_value, sym.lookup(variable_expr.name()).value().val);
+    for (auto &&[arg_value, variable_expr] :
+         llvm::zip(function->args(), func)) {
+      builder.CreateStore(&arg_value,
+                          sym.lookup(variable_expr.name()).value().val);
     }
 
-    generate(
-        static_cast<const ast::statement_block &>(func.body()),
-        /*global_scope=*/false
-    );
+    generate(static_cast<const ast::statement_block &>(func.body()),
+             /*global_scope=*/false);
 
     sym.end_scope();
     if (func.type.return_type() == frontend::types::type_builtin::type_void)
       builder.CreateRetVoid();
   }
 
-  void generate(const frontend::ast::ast_container &ast, const frontend::frontend_driver &drv) {
+  void generate(const frontend::ast::ast_container &ast,
+                const frontend::frontend_driver &drv) {
     declare_functions(drv.functions());
     declare_globals(ast);
     for (auto &&[_, attr] : drv.functions().usegraph) {
@@ -343,8 +358,8 @@ public:
 
     if (ast.get_root_ptr()) {
       ezvis::visit<void, ast::statement_block>(
-          [this](auto &st) { generate(st, /*global_scope=*/true); }, *ast.get_root_ptr()
-      );
+          [this](auto &st) { generate(st, /*global_scope=*/true); },
+          *ast.get_root_ptr());
     }
   }
 };
@@ -354,21 +369,35 @@ Value *codegen_visitor::generate(const ast::binary_expression &expr) {
   auto *rhs = apply(expr.right());
   using namespace ast;
   switch (expr.op_type()) {
-  case binary_operation::E_BIN_OP_ADD: return builder.CreateAdd(lhs, rhs);
-  case binary_operation::E_BIN_OP_SUB: return builder.CreateSub(lhs, rhs);
-  case binary_operation::E_BIN_OP_MUL: return builder.CreateMul(lhs, rhs);
-  case binary_operation::E_BIN_OP_DIV: return builder.CreateSDiv(lhs, rhs);
-  case binary_operation::E_BIN_OP_MOD: return builder.CreateSRem(lhs, rhs);
-  case binary_operation::E_BIN_OP_AND: return builder.CreateAnd(lhs, rhs);
-  case binary_operation::E_BIN_OP_OR: return builder.CreateOr(lhs, rhs);
+  case binary_operation::E_BIN_OP_ADD:
+    return builder.CreateAdd(lhs, rhs);
+  case binary_operation::E_BIN_OP_SUB:
+    return builder.CreateSub(lhs, rhs);
+  case binary_operation::E_BIN_OP_MUL:
+    return builder.CreateMul(lhs, rhs);
+  case binary_operation::E_BIN_OP_DIV:
+    return builder.CreateSDiv(lhs, rhs);
+  case binary_operation::E_BIN_OP_MOD:
+    return builder.CreateSRem(lhs, rhs);
+  case binary_operation::E_BIN_OP_AND:
+    return builder.CreateAnd(lhs, rhs);
+  case binary_operation::E_BIN_OP_OR:
+    return builder.CreateOr(lhs, rhs);
   // compare ops
-  case binary_operation::E_BIN_OP_EQ: return builder.CreateICmpEQ(lhs, rhs);
-  case binary_operation::E_BIN_OP_NE: return builder.CreateICmpNE(lhs, rhs);
-  case binary_operation::E_BIN_OP_GT: return builder.CreateICmpSGT(lhs, rhs);
-  case binary_operation::E_BIN_OP_LS: return builder.CreateICmpSLT(lhs, rhs);
-  case binary_operation::E_BIN_OP_GE: return builder.CreateICmpSGE(lhs, rhs);
-  case binary_operation::E_BIN_OP_LE: return builder.CreateICmpSLE(lhs, rhs);
-  default: throw std::invalid_argument("Unknown binary operation");
+  case binary_operation::E_BIN_OP_EQ:
+    return builder.CreateICmpEQ(lhs, rhs);
+  case binary_operation::E_BIN_OP_NE:
+    return builder.CreateICmpNE(lhs, rhs);
+  case binary_operation::E_BIN_OP_GT:
+    return builder.CreateICmpSGT(lhs, rhs);
+  case binary_operation::E_BIN_OP_LS:
+    return builder.CreateICmpSLT(lhs, rhs);
+  case binary_operation::E_BIN_OP_GE:
+    return builder.CreateICmpSGE(lhs, rhs);
+  case binary_operation::E_BIN_OP_LE:
+    return builder.CreateICmpSLE(lhs, rhs);
+  default:
+    throw std::invalid_argument("Unknown binary operation");
   }
 }
 
@@ -377,10 +406,14 @@ Value *codegen_visitor::generate(const ast::unary_expression &expr) {
   assert(val);
   using enum ast::unary_operation;
   switch (expr.op_type()) {
-  case E_UN_OP_NEG: return builder.CreateNeg(val);
-  case E_UN_OP_POS: return val;
-  case E_UN_OP_NOT: return builder.CreateNot(val);
-  default: throw std::invalid_argument("Unknown unary operation");
+  case E_UN_OP_NEG:
+    return builder.CreateNeg(val);
+  case E_UN_OP_POS:
+    return val;
+  case E_UN_OP_NOT:
+    return builder.CreateNot(val);
+  default:
+    throw std::invalid_argument("Unknown unary operation");
   }
 }
 
@@ -395,29 +428,34 @@ Value *codegen_visitor::generate(const ast::subscript &sub, bool do_load) {
   auto *subscript = apply(*sub.get_subscript());
   assert(var->type);
   assert(var->type.base().get_class() == frontend::types::type_class::E_ARRAY);
-  auto &arr_type = static_cast<const frontend::types::type_array &>(var->type.base());
+  auto &arr_type =
+      static_cast<const frontend::types::type_array &>(var->type.base());
   auto *elem_type = to_llvm_type(arr_type.element_type);
-  auto *elem = builder.CreateGEP(
-      ArrayType::get(elem_type, arr_type.size), ptr,
-      {Constant::getIntegerValue(Type::getInt32Ty(get_ctx()), APInt::getZero(32)), subscript}
-  );
+  auto *elem =
+      builder.CreateGEP(ArrayType::get(elem_type, arr_type.size), ptr,
+                        {Constant::getIntegerValue(Type::getInt32Ty(get_ctx()),
+                                                   APInt::getZero(32)),
+                         subscript});
   return do_load ? builder.CreateLoad(elem_type, elem) : elem;
 }
 
 Value *codegen_visitor::generate(const ast::constant_expression &expr) {
-  return Constant::getIntegerValue(to_llvm_type(expr.type), APInt(32, expr.value()));
+  return Constant::getIntegerValue(to_llvm_type(expr.type),
+                                   APInt(32, expr.value()));
 }
 
 Value *codegen_visitor::generate(const ast::return_statement &ret) {
-  if (ret.empty()) return builder.CreateRetVoid();
+  if (ret.empty())
+    return builder.CreateRetVoid();
   auto *val = apply(ret.expr());
   return builder.CreateRet(val);
 }
 
 Value *codegen_visitor::generate(const ast::if_statement &stmt) {
   auto *if_true = BasicBlock::Create(get_ctx(), "then", current_function);
-  auto *if_false =
-      stmt.else_block() ? BasicBlock::Create(get_ctx(), "else", current_function) : nullptr;
+  auto *if_false = stmt.else_block()
+                       ? BasicBlock::Create(get_ctx(), "else", current_function)
+                       : nullptr;
   auto *after_if = BasicBlock::Create(get_ctx(), "next", current_function);
   begin_scope(stmt.control_block_symtab);
   auto *condition = builder.CreateIsNotNull(apply(*stmt.cond()));
@@ -425,11 +463,13 @@ Value *codegen_visitor::generate(const ast::if_statement &stmt) {
   auto create_block = [&](const ast::i_ast_node &stblock, BasicBlock *block) {
     builder.SetInsertPoint(block);
     apply(stblock);
-    if (block->empty() || !(isa<BranchInst>(block->back()) || isa<ReturnInst>(block->back())))
+    if (block->empty() ||
+        !(isa<BranchInst>(block->back()) || isa<ReturnInst>(block->back())))
       builder.CreateBr(after_if);
   };
   create_block(*stmt.true_block(), if_true);
-  if (if_false) create_block(*stmt.else_block(), if_false);
+  if (if_false)
+    create_block(*stmt.else_block(), if_false);
   sym.end_scope();
   builder.SetInsertPoint(after_if);
   return nullptr;
@@ -460,7 +500,8 @@ Value *codegen_visitor::generate(const ast::while_statement &stmt) {
   return nullptr;
 }
 
-Value *codegen_visitor::generate(const ast::statement_block &stmt_block, bool global) {
+Value *codegen_visitor::generate(const ast::statement_block &stmt_block,
+                                 bool global) {
   if (global) {
     current_function = entry;
     auto *entry_block = BasicBlock::Create(get_ctx(), "", entry);
@@ -470,11 +511,16 @@ Value *codegen_visitor::generate(const ast::statement_block &stmt_block, bool gl
   }
 
   for (auto *st : stmt_block) {
-    if (frontend::ast::identify_node(st) == ast::ast_node_type::E_FUNCTION_DEFINITION) continue;
-    if (frontend::ast::identify_node(st) == ast::ast_node_type::E_RETURN_STATEMENT) break;
+    if (frontend::ast::identify_node(st) ==
+        ast::ast_node_type::E_FUNCTION_DEFINITION)
+      continue;
+    if (frontend::ast::identify_node(st) ==
+        ast::ast_node_type::E_RETURN_STATEMENT)
+      break;
     apply(*st);
   }
-  if (global) builder.CreateRetVoid();
+  if (global)
+    builder.CreateRetVoid();
   sym.end_scope();
   return nullptr;
 }
@@ -488,7 +534,8 @@ Value *codegen_visitor::generate(const ast::print_statement &prnt) {
   return builder.CreateCall(intrinsics::get_print_function(*m), {val});
 }
 
-Value *codegen_visitor::generate(const ast::function_definition_to_ptr_conv &conv) {
+Value *
+codegen_visitor::generate(const ast::function_definition_to_ptr_conv &conv) {
   return funcs.at(&conv.definition());
 }
 
@@ -503,26 +550,29 @@ Value *codegen_visitor::generate(const ast::assignment_statement &stmt) {
         return generate(sub, false);
       }
       auto &var = std::get<ast::variable_expression>(v);
-      if (!var.type || var.type.base().get_class() != frontend::types::type_class::E_ARRAY)
+      if (!var.type ||
+          var.type.base().get_class() != frontend::types::type_class::E_ARRAY)
         return sym.lookup(var.name()).value().val;
       return nullptr;
     }();
-    if (!ptr) continue;
+    if (!ptr)
+      continue;
     builder.CreateStore(val, ptr);
   }
   return val;
 }
 
 Value *codegen_visitor::generate(const ast::function_call &call) {
-  auto args = call | ranges::views::transform([this](auto &a) { return apply(*a); }) |
-      ranges::to<std::vector>();
+  auto args = call |
+              ranges::views::transform([this](auto &a) { return apply(*a); }) |
+              ranges::to<std::vector>();
   auto *callee = call.get_callee();
   assert(callee);
   return builder.CreateCall(funcs.at(callee), args);
 }
 
-auto emit_llvm(const frontend::frontend_driver &drv, LLVMContext &ctx)
-    -> std::unique_ptr<llvm::Module> {
+auto emit_llvm(const frontend::frontend_driver &drv,
+               LLVMContext &ctx) -> std::unique_ptr<llvm::Module> {
   codegen_visitor visitor(drv.get_filename(), ctx, drv);
   visitor.generate(drv.ast(), drv);
   return visitor.emit_module();

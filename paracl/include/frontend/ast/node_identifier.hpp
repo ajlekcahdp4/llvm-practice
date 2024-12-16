@@ -76,9 +76,10 @@ constexpr auto ast_expression_types = std::array{
 
 inline ast_node_type identify_node(const i_ast_node &base) {
   return ezvis::visit_tuple<ast_node_type, ast::tuple_all_nodes>(
-      [](auto &&node) { return detail::get_ast_node_type<std::remove_cvref_t<decltype(node)>>(); },
-      base
-  );
+      [](auto &&node) {
+        return detail::get_ast_node_type<std::remove_cvref_t<decltype(node)>>();
+      },
+      base);
 }
 
 inline ast_node_type identify_node(const i_ast_node *base) {

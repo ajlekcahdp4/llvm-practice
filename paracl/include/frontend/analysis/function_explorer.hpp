@@ -24,7 +24,8 @@
 
 namespace paracl::frontend {
 
-class function_explorer final : public ezvis::visitor_base<ast::i_ast_node, function_explorer, void> {
+class function_explorer final
+    : public ezvis::visitor_base<ast::i_ast_node, function_explorer, void> {
 private:
   std::vector<usegraph_type::value_type> m_function_stack;
   std::vector<error_report> *m_error_queue; // Diagnostics
@@ -32,7 +33,9 @@ private:
   ast::ast_container *m_ast;
 
 private:
-  void report_error(error_report report) { m_error_queue->push_back(std::move(report)); }
+  void report_error(error_report report) {
+    m_error_queue->push_back(std::move(report));
+  }
 
 public:
   function_explorer() = default;
@@ -47,7 +50,8 @@ public:
   void explore(const ast::if_statement &ref) {
     apply(*ref.cond());
     apply(*ref.true_block());
-    if (ref.else_block() != nullptr) apply(*ref.else_block());
+    if (ref.else_block() != nullptr)
+      apply(*ref.else_block());
   }
 
   void explore(const ast::value_block &ref) {
@@ -74,7 +78,8 @@ public:
   void explore(const ast::unary_expression &ref) { apply(ref.expr()); }
 
   void explore(ast::return_statement &ref) {
-    if (ref.empty()) return;
+    if (ref.empty())
+      return;
     apply(ref.expr());
   }
 
@@ -87,7 +92,8 @@ public:
   EZVIS_VISIT_INVOKER(explore);
 
 public:
-  bool explore(ast::ast_container &ast, functions_analytics &functions, std::vector<error_report> &errors) {
+  bool explore(ast::ast_container &ast, functions_analytics &functions,
+               std::vector<error_report> &errors) {
     m_function_stack.clear();
 
     m_ast = &ast;

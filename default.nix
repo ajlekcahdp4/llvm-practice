@@ -6,7 +6,7 @@
   ...
 }:
 let
-ctti = fetchFromGitHub {
+  ctti = fetchFromGitHub {
     owner = "Manu343726";
     repo = "ctti";
     rev = "d7e9828b82ce7a6321465fbd84f9bccb772c7f43";
@@ -29,5 +29,5 @@ stdenv.mkDerivation {
     ctti
     llvmPkgs.llvm
   ];
-  checkInputs = with pkgs; [gtest];
+  checkInputs = with pkgs; [ gtest ];
 }

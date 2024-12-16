@@ -50,7 +50,9 @@ private:
   friend class scanner;
 
 private:
-  void report_error(std::string message, location l) { m_current_error = {message, l}; }
+  void report_error(std::string message, location l) {
+    m_current_error = {message, l};
+  }
 
   error_kind take_error() {
     auto error = m_current_error.value();
@@ -59,12 +61,16 @@ private:
   }
 
 public:
-  parser_driver(std::string *filename) : m_scanner{*this, filename}, m_parser{m_scanner, *this} {}
+  parser_driver(std::string *filename)
+      : m_scanner{*this, filename}, m_parser{m_scanner, *this} {}
 
   bool parse() { return m_parser.parse(); }
-  void switch_input_stream(std::istream *is) { m_scanner.switch_streams(is, nullptr); }
+  void switch_input_stream(std::istream *is) {
+    m_scanner.switch_streams(is, nullptr);
+  }
 
-  template <typename t_node_type, typename... t_args> auto *make_ast_node(t_args &&...args) {
+  template <typename t_node_type, typename... t_args>
+  auto *make_ast_node(t_args &&...args) {
     return &m_ast.make_node<t_node_type>(std::forward<t_args>(args)...);
   }
 
@@ -88,7 +94,8 @@ private:
 
 public:
   frontend_driver(std::filesystem::path input_path)
-      : m_source{input_path}, m_reporter{m_source}, m_iss{std::make_unique<std::istringstream>(m_source.iss())},
+      : m_source{input_path}, m_reporter{m_source},
+        m_iss{std::make_unique<std::istringstream>(m_source.iss())},
         m_parsing_driver{std::make_unique<parser_driver>(m_source.filename())} {
     m_parsing_driver->switch_input_stream(m_iss.get());
   }
@@ -102,7 +109,8 @@ public:
 
   bool analyze() {
     auto &ast = m_parsing_driver->ast();
-    if (!ast.get_root_ptr()) return true;
+    if (!ast.get_root_ptr())
+      return true;
 
     error_queue_type errors;
     function_explorer explorer;

@@ -21,7 +21,8 @@
 
 namespace paracl::frontend::ast {
 
-class ast_dumper : public ezvis::visitor_base<const i_ast_node, ast_dumper, void> {
+class ast_dumper
+    : public ezvis::visitor_base<const i_ast_node, ast_dumper, void> {
 private:
   using to_visit = tuple_all_nodes;
 
@@ -34,11 +35,10 @@ private:
     m_ss << fmt::format("\tnode_{} [label = \"{}\"];\n", fmt::ptr(&ref), label);
   }
 
-  void
-  print_bind_node(const i_ast_node &parent, const i_ast_node &child, std::string_view label = "") {
-    m_ss << fmt::format(
-        "\tnode_{} -> node_{} [label = \"{}\"]\n", fmt::ptr(&parent), fmt::ptr(&child), label
-    );
+  void print_bind_node(const i_ast_node &parent, const i_ast_node &child,
+                       std::string_view label = "") {
+    m_ss << fmt::format("\tnode_{} -> node_{} [label = \"{}\"]\n",
+                        fmt::ptr(&parent), fmt::ptr(&child), label);
   }
 
 public:
@@ -55,16 +55,20 @@ public:
   void dump_node(const unary_expression &ref);
   void dump_node(const while_statement &ref);
 
-  void dump_node(const read_expression &ref) { print_declare_node(ref, "<read> ?"); }
+  void dump_node(const read_expression &ref) {
+    print_declare_node(ref, "<read> ?");
+  }
   void dump_node(const error_node &ref) { print_declare_node(ref, "<error>"); }
 
   void dump_node(const subscript &ref);
   void dump_node(const variable_expression &ref) {
-    print_declare_node(ref, fmt::format("<identifier> {}\n<type> {}", ref.name(), ref.type_str()));
+    print_declare_node(ref, fmt::format("<identifier> {}\n<type> {}",
+                                        ref.name(), ref.type_str()));
   }
 
   void dump_node(const constant_expression &ref) {
-    print_declare_node(ref, fmt::format("<integer constant> {:d}", ref.value()));
+    print_declare_node(ref,
+                       fmt::format("<integer constant> {:d}", ref.value()));
   }
 
   void dump_node(const function_definition &ref);
@@ -122,8 +126,8 @@ void ast_dumper::dump_node(const assignment_statement &ref) {
 
 void ast_dumper::dump_node(const binary_expression &ref) {
   print_declare_node(
-      ref, fmt::format("<binary expression>: {}", ast::binary_operation_to_string(ref.op_type()))
-  );
+      ref, fmt::format("<binary expression>: {}",
+                       ast::binary_operation_to_string(ref.op_type())));
 
   print_bind_node(ref, ref.left());
   print_bind_node(ref, ref.right());
@@ -154,7 +158,8 @@ void ast_dumper::dump_node(const print_statement &ref) {
 }
 
 void ast_dumper::dump_node(const value_block &ref) {
-  print_declare_node(ref, fmt::format("<value_block>\n<type>: {}", ref.type_str()));
+  print_declare_node(ref,
+                     fmt::format("<value_block>\n<type>: {}", ref.type_str()));
   for (const auto &v : ref) {
     print_bind_node(ref, *v);
     add_next(*v);
@@ -171,8 +176,8 @@ void ast_dumper::dump_node(const statement_block &ref) {
 
 void ast_dumper::dump_node(const unary_expression &ref) {
   print_declare_node(
-      ref, fmt::format("<binary expression> {}", ast::unary_operation_to_string(ref.op_type()))
-  );
+      ref, fmt::format("<binary expression> {}",
+                       ast::unary_operation_to_string(ref.op_type())));
   print_bind_node(ref, ref.expr());
   add_next(ref.expr());
 }
@@ -189,9 +194,8 @@ void ast_dumper::dump_node(const while_statement &ref) {
 
 void ast_dumper::dump_node(const function_definition &ref) {
   auto label = fmt::format(
-      "<function definition>: {}\n<arg count>: {}\n<type>: {}", ref.name.value_or("anonymous"),
-      ref.size(), ref.type.to_string()
-  );
+      "<function definition>: {}\n<arg count>: {}\n<type>: {}",
+      ref.name.value_or("anonymous"), ref.size(), ref.type.to_string());
 
   print_declare_node(ref, label);
   for (unsigned i = 0; const auto &v : ref) {
@@ -210,9 +214,8 @@ void ast_dumper::dump_node(const return_statement &ref) {
 }
 
 void ast_dumper::dump_node(const function_call &ref) {
-  print_declare_node(
-      ref, fmt::format("<function call>: {}\n<param count>: {}", ref.name(), ref.size())
-  );
+  print_declare_node(ref, fmt::format("<function call>: {}\n<param count>: {}",
+                                      ref.name(), ref.size()));
 
   for (unsigned i = 0; const auto &v : ref) {
     print_bind_node(ref, *v, fmt::format("param {}", i++));

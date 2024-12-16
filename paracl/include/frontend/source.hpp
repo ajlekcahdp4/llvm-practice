@@ -27,7 +27,8 @@ namespace paracl::frontend {
 class source_input {
 private:
   std::unique_ptr<std::string> m_filename; // Name of the source file
-  // Unique pointer to keep the underlying pointer the same, even when the object is moved from.
+  // Unique pointer to keep the underlying pointer the same, even when the
+  // object is moved from.
 
 private:
   std::string m_file_source; // Raw file representation as a string
@@ -44,17 +45,20 @@ private:
 
 public:
   source_input(const std::filesystem::path &input_path)
-      : m_filename{std::make_unique<std::string>(input_path.string())}, m_file_source{utils::read_file(input_path)} {
+      : m_filename{std::make_unique<std::string>(input_path.string())},
+        m_file_source{utils::read_file(input_path)} {
     fill_lines();
   }
 
   std::string_view getline(unsigned i) const & {
     assert(i != 0 && "Line number can't be equal to 1");
-    return m_file_lines.at(i - 1); /* Bison lines start with 1, so we have to subtrack */
+    return m_file_lines.at(
+        i - 1); /* Bison lines start with 1, so we have to subtrack */
   }
 
-  // Can't make this const qualified, because bison location requires it be a modifiable pointer for whatever reason.
-  // Note that the string is allocated on the heap to avoid issues with default constructors.
+  // Can't make this const qualified, because bison location requires it be a
+  // modifiable pointer for whatever reason. Note that the string is allocated
+  // on the heap to avoid issues with default constructors.
   std::string *filename() & { return m_filename.get(); }
   std::string_view get_filename() const { return *m_filename.get(); }
   std::istringstream iss() const & { return std::istringstream{m_file_source}; }

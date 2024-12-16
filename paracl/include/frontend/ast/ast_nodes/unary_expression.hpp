@@ -28,9 +28,12 @@ constexpr std::string_view unary_operation_to_string(unary_operation op) {
   using unary_op = unary_operation;
 
   switch (op) {
-  case unary_op::E_UN_OP_NEG: return "-";
-  case unary_op::E_UN_OP_POS: return "+";
-  case unary_op::E_UN_OP_NOT: return "!";
+  case unary_op::E_UN_OP_NEG:
+    return "-";
+  case unary_op::E_UN_OP_POS:
+    return "+";
+  case unary_op::E_UN_OP_NOT:
+    return "!";
   }
 
   assert(0); // We really shouldn't get here. If we do, then someone has broken

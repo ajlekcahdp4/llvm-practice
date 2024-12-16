@@ -46,36 +46,39 @@ private:
   ast::return_vector *m_return_statements = nullptr;
 
 private:
-  bool m_type_errors_allowed = false; // Flag used to indicate that a type mismatch is not an error.
+  bool m_type_errors_allowed =
+      false; // Flag used to indicate that a type mismatch is not an error.
   // Set this flag to true when doing a first pass on recurisive functions.
 
 private:
   void report_error(std::string msg, location loc) {
-    m_error_queue->push_back({
-        error_kind{msg, loc}
-    });
+    m_error_queue->push_back({error_kind{msg, loc}});
   }
 
-  void report_error(error_report report) { m_error_queue->push_back(std::move(report)); }
+  void report_error(error_report report) {
+    m_error_queue->push_back(std::move(report));
+  }
 
-  bool expect_type_eq(const types::generic_type &lhs, const types::i_type &rhs, location loc) {
-    if (m_type_errors_allowed) return false;
+  bool expect_type_eq(const types::generic_type &lhs, const types::i_type &rhs,
+                      location loc) {
+    if (m_type_errors_allowed)
+      return false;
 
     auto &&type = lhs;
-    if (!type || type.base().get_class() == types::type_class::E_ARRAY) return true;
+    if (!type || type.base().get_class() == types::type_class::E_ARRAY)
+      return true;
     if (!type || !(type == rhs)) {
 
       if (!type) {
-        report_error(fmt::format("Expression is not of expected type '{}'", rhs.to_string()), loc);
+        report_error(fmt::format("Expression is not of expected type '{}'",
+                                 rhs.to_string()),
+                     loc);
       }
 
       else {
-        report_error(
-            fmt::format(
-                "Expression is of type '{}', expected '{}'", type.to_string(), rhs.to_string()
-            ),
-            loc
-        );
+        report_error(fmt::format("Expression is of type '{}', expected '{}'",
+                                 type.to_string(), rhs.to_string()),
+                     loc);
       }
 
       return false;
@@ -97,7 +100,9 @@ private:
 public:
   EZVIS_VISIT_CT(ast::tuple_all_nodes)
 
-  void analyze_node(const ast::error_node &ref) { report_error(ref.error_msg(), ref.loc()); }
+  void analyze_node(const ast::error_node &ref) {
+    report_error(ref.error_msg(), ref.loc());
+  }
 
   // clang-format off
   void analyze_node(ast::read_expression &) {}
@@ -129,10 +134,16 @@ public:
 
 public:
   semantic_analyzer() : m_error_queue{&m_default_error_queue} {}
-  semantic_analyzer(functions_analytics &functions) { m_functions = &functions; } // Temporary
+  semantic_analyzer(functions_analytics &functions) {
+    m_functions = &functions;
+  } // Temporary
 
-  void set_error_queue(std::vector<error_report> &errors) { m_error_queue = &errors; }
-  void set_functions(functions_analytics &functions) { m_functions = &functions; }
+  void set_error_queue(std::vector<error_report> &errors) {
+    m_error_queue = &errors;
+  }
+  void set_functions(functions_analytics &functions) {
+    m_functions = &functions;
+  }
   void set_ast(ast::ast_container &ast) { m_ast = &ast; }
   error_queue_type &get_error_queue() & { return *m_error_queue; }
 };

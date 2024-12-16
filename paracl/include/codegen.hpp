@@ -119,10 +119,11 @@ public:
   std::optional<unsigned> lookup_location(std::string_view name) const {
     unsigned loc = 0;
 
-    [[maybe_unused]] auto found =
-        std::find_if(m_blocks.crbegin(), m_blocks.crend(), [name, &loc](auto &block) {
+    [[maybe_unused]] auto found = std::find_if(
+        m_blocks.crbegin(), m_blocks.crend(), [name, &loc](auto &block) {
           auto found = block.lookup(name);
-          if (found) loc = *found;
+          if (found)
+            loc = *found;
           return block.lookup(name).has_value();
         });
 
@@ -132,12 +133,14 @@ public:
   void push_dummy() { m_blocks.back().push_dummy(); }
 
   unsigned size() const {
-    if (m_blocks.empty()) return 0;
+    if (m_blocks.empty())
+      return 0;
     return m_blocks.back().size();
   }
 
   unsigned names() const {
-    if (m_blocks.empty()) return 0;
+    if (m_blocks.empty())
+      return 0;
     return m_blocks.back().names();
   }
 
@@ -146,14 +149,15 @@ public:
   codegen_stack_block front() { return m_blocks.front(); }
 };
 
-// It's really necessary to put all of this code inside an anonymous namespace to avoid external
-// linkage. paracl_isa relies on lambda types
+// It's really necessary to put all of this code inside an anonymous namespace
+// to avoid external linkage. paracl_isa relies on lambda types
 namespace {
 
 class codegen_visitor final
-    : public ezvis::visitor_base<const frontend::ast::i_ast_node, codegen_visitor, void> {
-  using builder_type =
-      bytecode_vm::builder::bytecode_builder<decltype(bytecode_vm::instruction_set::paracl_isa)>;
+    : public ezvis::visitor_base<const frontend::ast::i_ast_node,
+                                 codegen_visitor, void> {
+  using builder_type = bytecode_vm::builder::bytecode_builder<
+      decltype(bytecode_vm::instruction_set::paracl_isa)>;
 
 private:
   std::unordered_map<int, unsigned> m_constant_map;
@@ -183,10 +187,12 @@ private:
   std::vector<unsigned> m_exit_relocations;
 
 private:
-  std::unordered_map<const frontend::ast::function_definition *, unsigned> m_function_defs;
+  std::unordered_map<const frontend::ast::function_definition *, unsigned>
+      m_function_defs;
   const frontend::functions_analytics *m_functions;
 
-  codegen_stack_block m_global_scope; // Global scope stack variable distribution.
+  codegen_stack_block
+      m_global_scope; // Global scope stack variable distribution.
   codegen_stack_frame m_symtab_stack;
 
   builder_type m_builder;
@@ -206,7 +212,7 @@ private:
 
   unsigned current_constant_index() const {
     return m_constant_map.size() + m_return_address_constants.size() +
-        m_dynamic_jumps_constants.size();
+           m_dynamic_jumps_constants.size();
   }
 
 private:
@@ -231,7 +237,8 @@ private:
   void begin_scope(const frontend::symtab &stab) {
     m_symtab_stack.begin_scope(stab);
     for (unsigned i = 0; i < stab.size(); ++i) {
-      emit(encoded_instruction{vm_instruction_set::push_const_desc, lookup_or_insert_constant(0)});
+      emit(encoded_instruction{vm_instruction_set::push_const_desc,
+                               lookup_or_insert_constant(0)});
     }
   }
 
@@ -251,10 +258,11 @@ private:
   using to_visit = std::tuple<
       frontend::ast::assignment_statement, frontend::ast::binary_expression,
       frontend::ast::constant_expression, frontend::ast::if_statement,
-      frontend::ast::print_statement, frontend::ast::read_expression, frontend::ast::value_block,
-      frontend::ast::statement_block, frontend::ast::unary_expression,
-      frontend::ast::variable_expression, frontend::ast::while_statement,
-      frontend::ast::function_call, frontend::ast::return_statement,
+      frontend::ast::print_statement, frontend::ast::read_expression,
+      frontend::ast::value_block, frontend::ast::statement_block,
+      frontend::ast::unary_expression, frontend::ast::variable_expression,
+      frontend::ast::while_statement, frontend::ast::function_call,
+      frontend::ast::return_statement,
       frontend::ast::function_definition_to_ptr_conv>;
 
 public:
@@ -268,7 +276,8 @@ public:
   void generate(const frontend::ast::if_statement &);
   void generate(const frontend::ast::print_statement &);
   void generate(const frontend::ast::read_expression &);
-  void generate(const frontend::ast::statement_block &, bool global_scope = false);
+  void generate(const frontend::ast::statement_block &,
+                bool global_scope = false);
   void generate(const frontend::ast::value_block &, bool global_scope = false);
   void generate(const frontend::ast::unary_expression &);
   void generate(const frontend::ast::variable_expression &);
@@ -280,15 +289,15 @@ public:
   EZVIS_VISIT_INVOKER(generate);
 
   unsigned generate_function(const frontend::ast::function_definition &);
-  void generate_all(
-      const frontend::ast::ast_container &ast, const frontend::functions_analytics &functions
-  );
+  void generate_all(const frontend::ast::ast_container &ast,
+                    const frontend::functions_analytics &functions);
   bytecode_vm::decl_vm::chunk to_chunk();
 };
 
 void codegen_visitor::generate(const ast::constant_expression &ref) {
   auto index = lookup_or_insert_constant(ref.value());
-  emit_with_increment(encoded_instruction{vm_instruction_set::push_const_desc, index});
+  emit_with_increment(
+      encoded_instruction{vm_instruction_set::push_const_desc, index});
 }
 
 void codegen_visitor::generate(const ast::read_expression &) {
@@ -297,13 +306,14 @@ void codegen_visitor::generate(const ast::read_expression &) {
 
 void codegen_visitor::generate(const ast::variable_expression &ref) {
   if (auto index = m_symtab_stack.lookup_location(ref.name()); index) {
-    emit_with_increment(encoded_instruction{vm_instruction_set::push_local_rel_desc, index.value()}
-    );
+    emit_with_increment(encoded_instruction{
+        vm_instruction_set::push_local_rel_desc, index.value()});
     return;
   }
 
   if (auto index = m_global_scope.lookup(ref.name()); index) {
-    emit_with_increment(encoded_instruction{vm_instruction_set::push_local_desc, index.value()});
+    emit_with_increment(encoded_instruction{vm_instruction_set::push_local_desc,
+                                            index.value()});
   }
 }
 
@@ -319,28 +329,33 @@ void codegen_visitor::generate(const ast::assignment_statement &ref) {
 
   auto move_to_location = [this](std::string_view name) {
     if (auto index = m_symtab_stack.lookup_location(name); index) {
-      emit_with_decrement(encoded_instruction{vm_instruction_set::mov_local_rel_desc, *index});
+      emit_with_decrement(
+          encoded_instruction{vm_instruction_set::mov_local_rel_desc, *index});
       return;
     }
 
     else if (auto index = m_global_scope.lookup(name); index) {
-      emit_with_decrement(encoded_instruction{vm_instruction_set::mov_local_desc, *index});
+      emit_with_decrement(
+          encoded_instruction{vm_instruction_set::mov_local_desc, *index});
     }
   };
 
   auto push_from_location = [this](std::string_view name) {
     if (auto index = m_symtab_stack.lookup_location(name); index) {
-      emit_with_increment(encoded_instruction{vm_instruction_set::push_local_rel_desc, *index});
+      emit_with_increment(
+          encoded_instruction{vm_instruction_set::push_local_rel_desc, *index});
       return;
     }
 
     else if (auto index = m_global_scope.lookup(name); index) {
-      emit_with_increment(encoded_instruction{vm_instruction_set::push_local_desc, *index});
+      emit_with_increment(
+          encoded_instruction{vm_instruction_set::push_local_desc, *index});
     }
   };
 
   const auto last_it = std::prev(ref.rend()); // Empty assignments can't exist.
-  for (auto start = ref.rbegin(), finish = ref.rend(); start != finish; ++start) {
+  for (auto start = ref.rbegin(), finish = ref.rend(); start != finish;
+       ++start) {
     assert(std::holds_alternative<ast::variable_expression>(*start));
     auto &var = std::get<ast::variable_expression>(*start);
     move_to_location(var.name());
@@ -360,20 +375,47 @@ void codegen_visitor::generate(const ast::binary_expression &ref) {
 
   using bin_op = ast::binary_operation;
   switch (ref.op_type()) {
-  case bin_op::E_BIN_OP_ADD: emit_with_decrement(vm_instruction_set::add_desc); break;
-  case bin_op::E_BIN_OP_SUB: emit_with_decrement(vm_instruction_set::sub_desc); break;
-  case bin_op::E_BIN_OP_MUL: emit_with_decrement(vm_instruction_set::mul_desc); break;
-  case bin_op::E_BIN_OP_DIV: emit_with_decrement(vm_instruction_set::div_desc); break;
-  case bin_op::E_BIN_OP_MOD: emit_with_decrement(vm_instruction_set::mod_desc); break;
-  case bin_op::E_BIN_OP_EQ: emit_with_decrement(vm_instruction_set::cmp_eq_desc); break;
-  case bin_op::E_BIN_OP_NE: emit_with_decrement(vm_instruction_set::cmp_ne_desc); break;
-  case bin_op::E_BIN_OP_GT: emit_with_decrement(vm_instruction_set::cmp_gt_desc); break;
-  case bin_op::E_BIN_OP_LS: emit_with_decrement(vm_instruction_set::cmp_ls_desc); break;
-  case bin_op::E_BIN_OP_GE: emit_with_decrement(vm_instruction_set::cmp_ge_desc); break;
-  case bin_op::E_BIN_OP_LE: emit_with_decrement(vm_instruction_set::cmp_le_desc); break;
-  case bin_op::E_BIN_OP_AND: emit_with_decrement(vm_instruction_set::and_desc); break;
-  case bin_op::E_BIN_OP_OR: emit_with_decrement(vm_instruction_set::or_desc); break;
-  default: std::terminate();
+  case bin_op::E_BIN_OP_ADD:
+    emit_with_decrement(vm_instruction_set::add_desc);
+    break;
+  case bin_op::E_BIN_OP_SUB:
+    emit_with_decrement(vm_instruction_set::sub_desc);
+    break;
+  case bin_op::E_BIN_OP_MUL:
+    emit_with_decrement(vm_instruction_set::mul_desc);
+    break;
+  case bin_op::E_BIN_OP_DIV:
+    emit_with_decrement(vm_instruction_set::div_desc);
+    break;
+  case bin_op::E_BIN_OP_MOD:
+    emit_with_decrement(vm_instruction_set::mod_desc);
+    break;
+  case bin_op::E_BIN_OP_EQ:
+    emit_with_decrement(vm_instruction_set::cmp_eq_desc);
+    break;
+  case bin_op::E_BIN_OP_NE:
+    emit_with_decrement(vm_instruction_set::cmp_ne_desc);
+    break;
+  case bin_op::E_BIN_OP_GT:
+    emit_with_decrement(vm_instruction_set::cmp_gt_desc);
+    break;
+  case bin_op::E_BIN_OP_LS:
+    emit_with_decrement(vm_instruction_set::cmp_ls_desc);
+    break;
+  case bin_op::E_BIN_OP_GE:
+    emit_with_decrement(vm_instruction_set::cmp_ge_desc);
+    break;
+  case bin_op::E_BIN_OP_LE:
+    emit_with_decrement(vm_instruction_set::cmp_le_desc);
+    break;
+  case bin_op::E_BIN_OP_AND:
+    emit_with_decrement(vm_instruction_set::and_desc);
+    break;
+  case bin_op::E_BIN_OP_OR:
+    emit_with_decrement(vm_instruction_set::or_desc);
+    break;
+  default:
+    std::terminate();
   }
 }
 
@@ -389,7 +431,8 @@ void codegen_visitor::generate(const ast::value_block &ref, bool global_scope) {
     ret_addr_index = m_return_address_constants.size() - 1;
 
     m_symtab_stack.begin_scope(); // scope to isolate IP and SP
-    emit_with_increment(encoded_instruction{vm_instruction_set::push_const_desc, const_index});
+    emit_with_increment(
+        encoded_instruction{vm_instruction_set::push_const_desc, const_index});
     emit_with_increment(vm_instruction_set::setup_call_desc);
 
     m_prev_stack_size = m_symtab_stack.size();
@@ -405,22 +448,25 @@ void codegen_visitor::generate(const ast::value_block &ref, bool global_scope) {
 
       const auto node_type = frontend::ast::identify_node(st);
       const auto is_expression =
-          std::find(ast_expression_types.begin(), ast_expression_types.end(), node_type) !=
-          ast_expression_types.end();
+          std::find(ast_expression_types.begin(), ast_expression_types.end(),
+                    node_type) != ast_expression_types.end();
 
-      bool is_assignment = (node_type == frontend::ast::ast_node_type::E_ASSIGNMENT_STATEMENT);
-      bool is_return = (node_type == frontend::ast::ast_node_type::E_RETURN_STATEMENT);
+      bool is_assignment =
+          (node_type == frontend::ast::ast_node_type::E_ASSIGNMENT_STATEMENT);
+      bool is_return =
+          (node_type == frontend::ast::ast_node_type::E_RETURN_STATEMENT);
       bool pop_unused_result = is_expression && !is_return;
 
       using expressions_and_base =
-          utils::tuple_add_types_t<ast::tuple_expression_nodes, ast::i_ast_node>;
-      auto type = ezvis::visit_tuple<frontend::types::generic_type, expressions_and_base>(
-          ::utils::visitors{
-              [](ast::i_expression &expr) { return expr.type; },
-              [](ast::i_ast_node &) { return frontend::types::type_builtin::type_void; }
-          },
-          st
-      );
+          utils::tuple_add_types_t<ast::tuple_expression_nodes,
+                                   ast::i_ast_node>;
+      auto type = ezvis::visit_tuple<frontend::types::generic_type,
+                                     expressions_and_base>(
+          ::utils::visitors{[](ast::i_expression &expr) { return expr.type; },
+                            [](ast::i_ast_node &) {
+                              return frontend::types::type_builtin::type_void;
+                            }},
+          st);
 
       if (is_assignment && pop_unused_result) {
         set_currently_statement();
@@ -439,18 +485,21 @@ void codegen_visitor::generate(const ast::value_block &ref, bool global_scope) {
     }
   }
 
-  if (global_scope) m_global_scope = m_symtab_stack.front();
+  if (global_scope)
+    m_global_scope = m_symtab_stack.front();
   end_scope();
 
   if (should_return) {
-    m_return_address_constants.at(ret_addr_index).m_address = m_builder.current_loc();
+    m_return_address_constants.at(ret_addr_index).m_address =
+        m_builder.current_loc();
     m_prev_stack_size = prev_stack_size;
     m_symtab_stack.end_scope(); // end scope for IP and SP
     emit_with_increment(vm_instruction_set::store_r0_desc);
   }
 }
 
-void codegen_visitor::generate(const ast::statement_block &ref, bool global_scope) {
+void codegen_visitor::generate(const ast::statement_block &ref,
+                               bool global_scope) {
   bool should_return = false;
 
   unsigned ret_addr_index = 0;
@@ -462,7 +511,8 @@ void codegen_visitor::generate(const ast::statement_block &ref, bool global_scop
     ret_addr_index = m_return_address_constants.size() - 1;
 
     m_symtab_stack.begin_scope(); // scope to isolate IP and SP
-    emit_with_increment(encoded_instruction{vm_instruction_set::push_const_desc, const_index});
+    emit_with_increment(
+        encoded_instruction{vm_instruction_set::push_const_desc, const_index});
     emit_with_increment(vm_instruction_set::setup_call_desc);
 
     m_prev_stack_size = m_symtab_stack.size();
@@ -478,22 +528,25 @@ void codegen_visitor::generate(const ast::statement_block &ref, bool global_scop
 
       const auto node_type = frontend::ast::identify_node(st);
       const auto is_expression =
-          std::find(ast_expression_types.begin(), ast_expression_types.end(), node_type) !=
-          ast_expression_types.end();
+          std::find(ast_expression_types.begin(), ast_expression_types.end(),
+                    node_type) != ast_expression_types.end();
 
-      bool is_assignment = (node_type == frontend::ast::ast_node_type::E_ASSIGNMENT_STATEMENT);
-      bool is_return = (node_type == frontend::ast::ast_node_type::E_RETURN_STATEMENT);
+      bool is_assignment =
+          (node_type == frontend::ast::ast_node_type::E_ASSIGNMENT_STATEMENT);
+      bool is_return =
+          (node_type == frontend::ast::ast_node_type::E_RETURN_STATEMENT);
       bool pop_unused_result = is_expression && !is_return;
 
       using expressions_and_base =
-          utils::tuple_add_types_t<ast::tuple_expression_nodes, ast::i_ast_node>;
-      auto type = ezvis::visit_tuple<frontend::types::generic_type, expressions_and_base>(
-          ::utils::visitors{
-              [](ast::i_expression &expr) { return expr.type; },
-              [](ast::i_ast_node &) { return frontend::types::type_builtin::type_void; }
-          },
-          st
-      );
+          utils::tuple_add_types_t<ast::tuple_expression_nodes,
+                                   ast::i_ast_node>;
+      auto type = ezvis::visit_tuple<frontend::types::generic_type,
+                                     expressions_and_base>(
+          ::utils::visitors{[](ast::i_expression &expr) { return expr.type; },
+                            [](ast::i_ast_node &) {
+                              return frontend::types::type_builtin::type_void;
+                            }},
+          st);
 
       if (is_assignment && pop_unused_result) {
         set_currently_statement();
@@ -512,11 +565,13 @@ void codegen_visitor::generate(const ast::statement_block &ref, bool global_scop
     }
   }
 
-  if (global_scope) m_global_scope = m_symtab_stack.front();
+  if (global_scope)
+    m_global_scope = m_symtab_stack.front();
   end_scope();
 
   if (should_return) {
-    m_return_address_constants.at(ret_addr_index).m_address = m_builder.current_loc();
+    m_return_address_constants.at(ret_addr_index).m_address =
+        m_builder.current_loc();
     m_prev_stack_size = prev_stack_size;
     m_symtab_stack.end_scope(); // end scope for IP and SP
     emit_with_increment(vm_instruction_set::store_r0_desc);
@@ -527,15 +582,15 @@ void codegen_visitor::visit_if_no_else(const ast::if_statement &ref) {
   reset_currently_statement();
   apply(*ref.cond());
 
-  auto index_jmp_to_false_block =
-      emit_with_decrement(encoded_instruction{vm_instruction_set::jmp_false_desc, 0});
+  auto index_jmp_to_false_block = emit_with_decrement(
+      encoded_instruction{vm_instruction_set::jmp_false_desc, 0});
 
   set_currently_statement();
   apply(*ref.true_block());
 
   auto jump_to_index = m_builder.current_loc();
-  auto &to_relocate =
-      m_builder.get_as(vm_instruction_set::jmp_false_desc, index_jmp_to_false_block);
+  auto &to_relocate = m_builder.get_as(vm_instruction_set::jmp_false_desc,
+                                       index_jmp_to_false_block);
 
   std::get<0>(to_relocate.m_attr) = jump_to_index;
 }
@@ -544,22 +599,23 @@ void codegen_visitor::visit_if_with_else(const ast::if_statement &ref) {
   reset_currently_statement();
   apply(*ref.cond());
 
-  auto index_jmp_to_false_block =
-      emit_with_decrement(encoded_instruction{vm_instruction_set::jmp_false_desc, 0});
+  auto index_jmp_to_false_block = emit_with_decrement(
+      encoded_instruction{vm_instruction_set::jmp_false_desc, 0});
 
   set_currently_statement();
   apply(*ref.true_block());
-  auto index_jmp_to_after_true_block = emit(encoded_instruction{vm_instruction_set::jmp_desc, 0});
+  auto index_jmp_to_after_true_block =
+      emit(encoded_instruction{vm_instruction_set::jmp_desc, 0});
 
-  auto &to_relocate_else_jump =
-      m_builder.get_as(vm_instruction_set::jmp_false_desc, index_jmp_to_false_block);
+  auto &to_relocate_else_jump = m_builder.get_as(
+      vm_instruction_set::jmp_false_desc, index_jmp_to_false_block);
   std::get<0>(to_relocate_else_jump.m_attr) = m_builder.current_loc();
 
   set_currently_statement();
   apply(*ref.else_block());
 
-  auto &to_relocate_after_true_block =
-      m_builder.get_as(vm_instruction_set::jmp_desc, index_jmp_to_after_true_block);
+  auto &to_relocate_after_true_block = m_builder.get_as(
+      vm_instruction_set::jmp_desc, index_jmp_to_after_true_block);
   std::get<0>(to_relocate_after_true_block.m_attr) = m_builder.current_loc();
 }
 
@@ -582,14 +638,14 @@ void codegen_visitor::generate(const ast::while_statement &ref) {
   reset_currently_statement();
   apply(*ref.cond());
 
-  auto index_jmp_to_after_loop =
-      emit_with_decrement(encoded_instruction{vm_instruction_set::jmp_false_desc, 0});
+  auto index_jmp_to_after_loop = emit_with_decrement(
+      encoded_instruction{vm_instruction_set::jmp_false_desc, 0});
   set_currently_statement();
 
   apply(*ref.block());
   emit(encoded_instruction{vm_instruction_set::jmp_desc, while_location_start});
-  auto &to_relocate_after_loop_jump =
-      m_builder.get_as(vm_instruction_set::jmp_false_desc, index_jmp_to_after_loop);
+  auto &to_relocate_after_loop_jump = m_builder.get_as(
+      vm_instruction_set::jmp_false_desc, index_jmp_to_after_loop);
   std::get<0>(to_relocate_after_loop_jump.m_attr) = m_builder.current_loc();
 
   end_scope();
@@ -601,9 +657,8 @@ void codegen_visitor::generate(const ast::unary_expression &ref) {
 
   switch (ref.op_type()) {
   case unary_op::E_UN_OP_NEG: {
-    emit_with_increment(
-        encoded_instruction{vm_instruction_set::push_const_desc, lookup_or_insert_constant(0)}
-    );
+    emit_with_increment(encoded_instruction{vm_instruction_set::push_const_desc,
+                                            lookup_or_insert_constant(0)});
     apply(ref.expr());
     emit_with_decrement(vm_instruction_set::sub_desc);
     break;
@@ -619,7 +674,8 @@ void codegen_visitor::generate(const ast::unary_expression &ref) {
     emit(vm_instruction_set::not_desc);
     break;
 
-  default: std::terminate();
+  default:
+    std::terminate();
   }
   }
 }
@@ -636,7 +692,8 @@ void codegen_visitor::generate(const ast::function_call &ref) {
   const auto ret_addr_index = m_return_address_constants.size() - 1;
 
   m_symtab_stack.begin_scope(); // scope to isolate IP and SP
-  emit_with_increment(encoded_instruction{vm_instruction_set::push_const_desc, const_index});
+  emit_with_increment(
+      encoded_instruction{vm_instruction_set::push_const_desc, const_index});
   emit_with_increment(vm_instruction_set::setup_call_desc);
 
   auto &&n_args = ref.size();
@@ -647,19 +704,23 @@ void codegen_visitor::generate(const ast::function_call &ref) {
   emit(encoded_instruction{vm_instruction_set::update_sp_desc, n_args});
 
   if (ref.m_def) {
-    auto relocate_index = emit(encoded_instruction{vm_instruction_set::jmp_desc});
+    auto relocate_index =
+        emit(encoded_instruction{vm_instruction_set::jmp_desc});
     m_relocations_function_calls.push_back({relocate_index, ref.m_def});
   }
 
   else {
     int total_depth = m_symtab_stack.size() - n_args;
-    int rel_pos = m_symtab_stack.lookup_location(ref.name()).value() - total_depth;
+    int rel_pos =
+        m_symtab_stack.lookup_location(ref.name()).value() - total_depth;
 
-    emit_with_increment(encoded_instruction{vm_instruction_set::push_local_rel_desc, rel_pos});
+    emit_with_increment(
+        encoded_instruction{vm_instruction_set::push_local_rel_desc, rel_pos});
     emit_with_decrement(vm_instruction_set::jmp_dynamic_desc);
   }
 
-  m_return_address_constants.at(ret_addr_index).m_address = m_builder.current_loc();
+  m_return_address_constants.at(ret_addr_index).m_address =
+      m_builder.current_loc();
   m_symtab_stack.end_scope();
 
   if (is_return) {
@@ -682,13 +743,17 @@ void codegen_visitor::generate(const frontend::ast::return_statement &ref) {
   emit(encoded_instruction{vm_instruction_set::return_desc});
 }
 
-void codegen_visitor::generate(const frontend::ast::function_definition_to_ptr_conv &ref) {
+void codegen_visitor::generate(
+    const frontend::ast::function_definition_to_ptr_conv &ref) {
   const auto const_index = current_constant_index();
-  m_dynamic_jumps_constants.push_back({const_index, 0, &ref.definition()}); // Dummy address
-  emit_with_increment(encoded_instruction{vm_instruction_set::push_const_desc, const_index});
+  m_dynamic_jumps_constants.push_back(
+      {const_index, 0, &ref.definition()}); // Dummy address
+  emit_with_increment(
+      encoded_instruction{vm_instruction_set::push_const_desc, const_index});
 }
 
-unsigned codegen_visitor::generate_function(const frontend::ast::function_definition &ref) {
+unsigned codegen_visitor::generate_function(
+    const frontend::ast::function_definition &ref) {
   m_symtab_stack.clear();
 
   m_curr_function = &ref;
@@ -724,8 +789,8 @@ unsigned codegen_visitor::lookup_or_insert_constant(int constant) {
 }
 
 void codegen_visitor::generate_all(
-    const frontend::ast::ast_container &ast, const frontend::functions_analytics &functions
-) {
+    const frontend::ast::ast_container &ast,
+    const frontend::functions_analytics &functions) {
   m_return_address_constants.clear();
   m_functions = &functions;
 

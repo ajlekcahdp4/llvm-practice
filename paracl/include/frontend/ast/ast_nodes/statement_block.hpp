@@ -29,7 +29,8 @@ private:
 
 public:
   statement_block() = default;
-  statement_block(std::deque<i_ast_node *> vec, location l) : deque{vec}, i_statement{l} {}
+  statement_block(std::deque<i_ast_node *> vec, location l)
+      : deque{vec}, i_statement{l} {}
 
   void append_statement(i_ast_node &statement) {
     const bool empty = deque::empty();
@@ -64,8 +65,8 @@ private:
 
 public:
   value_block() = default;
-  value_block(std::deque<i_ast_node *> vec, location l) : deque{vec}, i_expression{l} {}
-
+  value_block(std::deque<i_ast_node *> vec, location l)
+      : deque{vec}, i_expression{l} {}
 
   void append_statement(i_ast_node &statement) {
     const bool empty = deque::empty();

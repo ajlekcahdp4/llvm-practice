@@ -19,7 +19,8 @@ namespace paracl::frontend::ast {
 
 class ast_container;
 
-class ast_copier : public ezvis::visitor_base<const i_ast_node, ast_copier, i_ast_node &> {
+class ast_copier
+    : public ezvis::visitor_base<const i_ast_node, ast_copier, i_ast_node &> {
   using to_visit = tuple_all_nodes;
   ast_container &m_container;
 
@@ -43,7 +44,8 @@ public:
   function_definition &copy(const function_definition &);
   return_statement &copy(const return_statement &);
   function_call &copy(const function_call &);
-  function_definition_to_ptr_conv &copy(const function_definition_to_ptr_conv &);
+  function_definition_to_ptr_conv &
+  copy(const function_definition_to_ptr_conv &);
   subscript &copy(const subscript &);
 
   EZVIS_VISIT_INVOKER(copy);
@@ -57,7 +59,8 @@ public:
 };
 
 inline i_ast_node *ast_copy(i_ast_node *node, ast_container &container) {
-  if (!node) return nullptr; // In case the ast is empty. nullptr is a valid parameter
+  if (!node)
+    return nullptr; // In case the ast is empty. nullptr is a valid parameter
   ast_copier copier = {container};
   return &copier.apply(*node);
 }

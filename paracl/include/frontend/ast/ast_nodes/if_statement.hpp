@@ -32,8 +32,10 @@ public:
   if_statement(i_expression &cond, statement_block &true_block, location l)
       : i_statement{l}, m_condition{&cond}, m_true_block{&true_block} {}
 
-  if_statement(i_expression &cond, statement_block &true_block, statement_block &else_block, location l)
-      : i_statement{l}, m_condition{&cond}, m_true_block{&true_block}, m_else_block{&else_block} {}
+  if_statement(i_expression &cond, statement_block &true_block,
+               statement_block &else_block, location l)
+      : i_statement{l}, m_condition{&cond}, m_true_block{&true_block},
+        m_else_block{&else_block} {}
 
   i_expression *cond() const { return m_condition; }
   statement_block *true_block() const { return m_true_block; }

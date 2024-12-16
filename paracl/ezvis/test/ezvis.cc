@@ -35,8 +35,10 @@ TEST(test_ezvis, test_lambda_visit) {
 
   const auto get_str = [](const auto &base) {
     auto res = ezvis::visit<std::string, derived1, derived2>(
-        [](const auto &type) { return std::remove_reference_t<decltype(type)>::msg; }, *base.get()
-    );
+        [](const auto &type) {
+          return std::remove_reference_t<decltype(type)>::msg;
+        },
+        *base.get());
     return res;
   };
 

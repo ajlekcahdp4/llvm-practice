@@ -16,6 +16,7 @@
 
 namespace graphs {
 
-template <typename T, std::invocable<T> hash_t = std::hash<T>> using dag = basic_directed_graph<T, void, void>;
+template <typename T, std::invocable<T> hash_t = std::hash<T>>
+using dag = basic_directed_graph<T, void, void>;
 
 } // namespace graphs

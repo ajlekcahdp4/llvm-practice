@@ -1,9 +1,9 @@
 /*
  * ----------------------------------------------------------------------------
  * "THE BEER-WARE LICENSE" (Revision 42):
- * <tsimmerman.ss@phystech.edu>, <alex.rom23@mail.ru> wrote this file.  As long as you
- * retain this notice you can do whatever you want with this stuff. If we meet
- * some day, and you think this stuff is worth it, you can buy me a beer in
+ * <tsimmerman.ss@phystech.edu>, <alex.rom23@mail.ru> wrote this file.  As long
+ * as you retain this notice you can do whatever you want with this stuff. If we
+ * meet some day, and you think this stuff is worth it, you can buy me a beer in
  * return.
  * ----------------------------------------------------------------------------
  */
@@ -23,22 +23,26 @@
 namespace paracl::frontend {
 
 void function_explorer::explore(ast::function_definition &ref) {
-  assert(ref.name.has_value() && "Encountered an unnamed function. This shouldn't happen");
+  assert(ref.name.has_value() &&
+         "Encountered an unnamed function. This shouldn't happen");
 
   auto &&name_v = ref.name.value();
-  auto [attr, inserted] = m_analytics->named_functions.define_function(name_v, {&ref});
+  auto [attr, inserted] =
+      m_analytics->named_functions.define_function(name_v, {&ref});
 
   if (!inserted) {
     auto report = error_report{
-        {fmt::format("Redefinition of function `{}`", name_v), ref.loc()}
-    };
-    report.add_attachment(error_attachment{fmt::format("[Note] Previously declared here:"), attr.definition->loc()});
+        {fmt::format("Redefinition of function `{}`", name_v), ref.loc()}};
+    report.add_attachment(
+        error_attachment{fmt::format("[Note] Previously declared here:"),
+                         attr.definition->loc()});
     report_error(report);
     return;
   }
 
   if (!m_function_stack.empty()) {
-    m_analytics->usegraph.insert(usegraph_type::value_type{name_v, &ref}, m_function_stack.back());
+    m_analytics->usegraph.insert(usegraph_type::value_type{name_v, &ref},
+                                 m_function_stack.back());
   } else {
     m_analytics->usegraph.insert(usegraph_type::value_type{name_v, &ref});
   }
@@ -60,7 +64,8 @@ void function_explorer::explore(ast::function_call &ref) {
       auto &&curr_func = m_function_stack.back();
       // Do not create recursive loops. These will get handled separately.
       if (curr_func.key != ref.name()) {
-        m_analytics->usegraph.insert(usegraph_type::value_type{name_v, def}, m_function_stack.back());
+        m_analytics->usegraph.insert(usegraph_type::value_type{name_v, def},
+                                     m_function_stack.back());
       } else {
         m_analytics->named_functions.set_recursive(name_v);
       }
@@ -77,7 +82,8 @@ void function_explorer::explore(ast::function_call &ref) {
   }
 }
 
-void function_explorer::explore(const ast::function_definition_to_ptr_conv &ref) {
+void function_explorer::explore(
+    const ast::function_definition_to_ptr_conv &ref) {
   auto &def = ref.definition();
   auto &name = def.name;
 
@@ -86,7 +92,8 @@ void function_explorer::explore(const ast::function_definition_to_ptr_conv &ref)
   }
 
   if (!m_function_stack.empty()) {
-    m_analytics->usegraph.insert(usegraph_type::value_type{name.value(), &def}, m_function_stack.back());
+    m_analytics->usegraph.insert(usegraph_type::value_type{name.value(), &def},
+                                 m_function_stack.back());
   } else {
     m_analytics->usegraph.insert(usegraph_type::value_type{name.value(), &def});
   }

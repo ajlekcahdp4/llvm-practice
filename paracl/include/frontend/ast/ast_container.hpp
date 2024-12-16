@@ -49,7 +49,8 @@ public:
   }
 
   ast_container &operator=(const ast_container &other) {
-    if (this == &other) return *this;
+    if (this == &other)
+      return *this;
     ast_container temp = {other};
     *this = std::move(temp);
     return *this;

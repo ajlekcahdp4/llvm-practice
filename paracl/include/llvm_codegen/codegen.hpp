@@ -26,6 +26,7 @@ int32_t read();
 
 void add_function_intrinsics(frontend::ast::ast_container &ast);
 
-auto emit_llvm(const frontend::frontend_driver &drv, llvm::LLVMContext &ctx) -> std::unique_ptr<llvm::Module>;
+auto emit_llvm(const frontend::frontend_driver &drv,
+               llvm::LLVMContext &ctx) -> std::unique_ptr<llvm::Module>;
 
 } // namespace paracl::llvm_codegen
